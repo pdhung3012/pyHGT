@@ -1,4 +1,4 @@
-from .conv import *
+from conv import *
 
 class Classifier(nn.Module):
     def __init__(self, n_hid, n_out):
