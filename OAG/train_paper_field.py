@@ -6,14 +6,20 @@ filterwarnings("ignore")
 
 import argparse
 
+fopParent='../../dataPapers/'
+# fopInputDir=fopParent+'HGT_data/MAG_0919_CS/'
+fopOutputDir=fopParent+'HGT_data/bag_output/'
+fopModelDir=fopParent+'HGT_data/bag_model/'
+
+
 parser = argparse.ArgumentParser(description='Training GNN on Paper-Field (L2) classification task')
 
 '''
     Dataset arguments
 '''
-parser.add_argument('--data_dir', type=str, default='./dataset/oag_output',
+parser.add_argument('--data_dir', type=str, default=fopOutputDir,
                     help='The address of preprocessed graph.')
-parser.add_argument('--model_dir', type=str, default='./model_save',
+parser.add_argument('--model_dir', type=str, default=fopModelDir,
                     help='The address for storing the models and optimization results.')
 parser.add_argument('--task_name', type=str, default='PF',
                     help='The name of the stored models and optimization results.')

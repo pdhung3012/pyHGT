@@ -3,6 +3,9 @@ import argparse
 from transformers import *
 
 from pyHGT.data import *
+fopParent='../../dataPapers/'
+fopInputDir=fopParent+'HGT_data/MAG_0919_CS/'
+fopOutputDir=fopParent+'HGT_data/bag_output/'
 
 # from tqdm import tqdm_notebook as tqdm  # Uncomment this line if using jupyter notebook
 
@@ -11,9 +14,9 @@ parser = argparse.ArgumentParser(description='Preprocess OAG (CS/Med/All) Data')
 '''
     Dataset arguments
 '''
-parser.add_argument('--input_dir', type=str, default='./data/oag_raw',
+parser.add_argument('--input_dir', type=str, default=fopInputDir,
                     help='The address to store the original data directory.')
-parser.add_argument('--output_dir', type=str, default='./data/oag_output',
+parser.add_argument('--output_dir', type=str, default=fopOutputDir,
                     help='The address to output the preprocessed graph.')
 parser.add_argument('--cuda', type=int, default=0,
                     help='Avaiable GPU ID')
