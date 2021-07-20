@@ -3,7 +3,9 @@ import math, copy, time
 import numpy as np
 from collections import defaultdict
 import pandas as pd
-from .utils import *
+import sys
+sys.path.append(os.path.abspath(os.path.join('..')))
+from utils import *
 
 import math
 from tqdm import tqdm
