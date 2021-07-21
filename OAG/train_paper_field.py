@@ -1,4 +1,6 @@
 import sys
+import torch
+print('cuda status {}'.format( torch.cuda.is_available() ))
 from pyHGT.data import *
 from pyHGT.model import *
 from warnings import filterwarnings
@@ -10,6 +12,7 @@ fopParent='../../dataPapers/'
 # fopInputDir=fopParent+'HGT_data/MAG_0919_CS/'
 fopOutputDir=fopParent+'HGT_data/bag_output/'
 fopModelDir=fopParent+'HGT_data/bag_model/'
+
 
 
 parser = argparse.ArgumentParser(description='Training GNN on Paper-Field (L2) classification task')
@@ -54,7 +57,7 @@ parser.add_argument('--optimizer', type=str, default='adamw',
                     help='optimizer to use.')
 parser.add_argument('--data_percentage', type=float, default=1.0,
                     help='Percentage of training and validation data to use')
-parser.add_argument('--n_epoch', type=int, default=200,
+parser.add_argument('--n_epoch', type=int, default=5,
                     help='Number of epoch to run')
 parser.add_argument('--n_pool', type=int, default=4,
                     help='Number of process to sample subgraph')    
@@ -98,7 +101,7 @@ def node_classification_sample(seed, pairs, time_range):
         (1) Sample batch_size number of output nodes (papers), get their time.
     '''
     np.random.seed(seed)
-    target_ids = np.random.choice(list(pairs.keys()), args.batch_size, replace = False)
+    target_ids = np.random.choice(list(pairs.keys()), args.batch_size, replace = True)
     target_info = []
     for target_id in target_ids:
         _, _time = pairs[target_id]
@@ -215,18 +218,19 @@ scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, 1000, eta_min=
 stats = []
 res = []
 best_val   = 0
-train_step = 1500
+train_step = 50
 
 pool = mp.Pool(args.n_pool)
 st = time.time()
 jobs = prepare_data(pool)
+print('n_pool {} lenJobs {}'.format(args.n_pool,len(jobs)))
 
 for epoch in np.arange(args.n_epoch) + 1:
     '''
         Prepare Training and Validation Data
     '''
-    train_data = [job.get() for job in jobs[:-1]]
-    valid_data = jobs[-1].get()
+    train_data = [job.get() for job in jobs[:0]]
+    valid_data = jobs[0].get()
     pool.close()
     pool.join()
     '''

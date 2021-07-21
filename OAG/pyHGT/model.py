@@ -1,4 +1,6 @@
-from conv import *
+# import torch.nn as nn
+# conv = nn.Conv2d(3,10,kernel_size = 5,stride=1,padding=2)
+from .conv import *
 
 class Classifier(nn.Module):
     def __init__(self, n_hid, n_out):

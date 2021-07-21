@@ -6,7 +6,7 @@ from pyHGT.data import *
 fopParent='../../dataPapers/'
 fopInputDir=fopParent+'HGT_data/MAG_0919_CS/'
 fopOutputDir=fopParent+'HGT_data/bag_output/'
-
+maxLineCount=100
 # from tqdm import tqdm_notebook as tqdm  # Uncomment this line if using jupyter notebook
 
 parser = argparse.ArgumentParser(description='Preprocess OAG (CS/Med/All) Data')
@@ -33,7 +33,9 @@ test_time_bar = 2016
 filename = 'PR%s_20190919.tsv' % args.domain
 print(f'Counting paper cites from {filename}...')
 filename = f'{args.input_dir}/{filename}'
-line_count = sum(1 for line in open(filename))
+# line_count = sum(1 for line in open(filename))
+line_count=maxLineCount
+
 
 cite_dict = defaultdict(lambda: 0)
 
@@ -47,7 +49,8 @@ with open(filename) as fin:
 filename = 'Papers%s_20190919.tsv' % args.domain
 print(f'Reading Paper nodes from {filename}...')
 filename = f'{args.input_dir}/{filename}'
-line_count = sum(1 for line in open(filename))
+# line_count = sum(1 for line in open(filename))
+line_count=maxLineCount
 
 paper_nodes = defaultdict(lambda: {})
 
@@ -80,17 +83,22 @@ else:
 filename = 'PAb%s_20190919.tsv' % args.domain
 print(f'Getting paper abstract embeddings. Abstracts are from {filename}...')
 filename = f'{args.input_dir}/{filename}'
-line_count = sum(1 for line in open(filename, 'r'))
 
+# line_count = sum(1 for line in open(filename, 'r'))
+line_count=maxLineCount
 tokenizer = XLNetTokenizer.from_pretrained('xlnet-base-cased')
 model = XLNetModel.from_pretrained('xlnet-base-cased',
                                    output_hidden_states=True,
                                    output_attentions=True).to(device)
-
+indexFile=0
 with open(filename) as fin:
     fin.readline()
     for line in tqdm(fin, total=line_count):
         try:
+            indexFile = indexFile + 1
+            print('indexFile {}'.format(indexFile))
+            if indexFile==10000:
+                break
             tokens = line.split('\t')
             paper_id = tokens[0]
             if paper_id in paper_nodes:
