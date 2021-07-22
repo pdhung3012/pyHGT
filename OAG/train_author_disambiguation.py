@@ -53,7 +53,7 @@ parser.add_argument('--optimizer', type=str, default='adamw',
                     help='optimizer to use.')
 parser.add_argument('--data_percentage', type=float, default=1.0,
                     help='Percentage of training and validation data to use')
-parser.add_argument('--n_epoch', type=int, default=100,
+parser.add_argument('--n_epoch', type=int, default=5,
                     help='Number of epoch to run')
 parser.add_argument('--n_pool', type=int, default=4,
                     help='Number of process to sample subgraph')    
@@ -109,7 +109,7 @@ def author_disambiguation_sample(seed, pairs, time_range, batch_size):
         (1) Sample batch_size // 4 number of names
     '''
     np.random.seed(seed)
-    names = np.random.choice(list(pairs.keys()), batch_size // 4, replace = False)
+    names = np.random.choice(4,list(pairs.keys()), batch_size // 4)
     '''
         (2) Get all the papers written by these same-name authors, and then prepare the label
     '''
@@ -259,8 +259,8 @@ for epoch in np.arange(args.n_epoch) + 1:
     '''
         Prepare Training and Validation Data
     '''
-    train_data = [job.get() for job in jobs[:-1]]
-    valid_data = jobs[-1].get()
+    train_data = [job.get() for job in jobs[:0]]
+    valid_data = jobs[0].get()
     pool.close()
     pool.join()
     '''

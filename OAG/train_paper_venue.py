@@ -53,7 +53,7 @@ parser.add_argument('--optimizer', type=str, default='adamw',
                     help='optimizer to use.')
 parser.add_argument('--data_percentage', type=float, default=1.0,
                     help='Percentage of training and validation data to use')
-parser.add_argument('--n_epoch', type=int, default=200,
+parser.add_argument('--n_epoch', type=int, default=5,
                     help='Number of epoch to run')
 parser.add_argument('--n_pool', type=int, default=4,
                     help='Number of process to sample subgraph')    
@@ -96,7 +96,7 @@ def node_classification_sample(seed, pairs, time_range, batch_size):
         (1) Sample batch_size number of output nodes (papers) and their time.
     '''
     np.random.seed(seed)
-    target_ids = np.random.choice(list(pairs.keys()), batch_size, replace = False)
+    target_ids = np.random.choice(list(pairs.keys()), batch_size, replace = True)
     target_info = []
     for target_id in target_ids:
         _, _time = pairs[target_id]
