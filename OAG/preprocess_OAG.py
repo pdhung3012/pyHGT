@@ -96,7 +96,7 @@ with open(filename) as fin:
     for line in tqdm(fin, total=line_count):
         try:
             indexFile = indexFile + 1
-            print('indexFile {}'.format(indexFile))
+            # print('indexFile {}'.format(indexFile))
             if indexFile==10000:
                 break
             tokens = line.split('\t')
@@ -151,6 +151,7 @@ with open(filename) as fin:
         remaining_nodes.append(paper_id)
         venue_type = tokens[-2]
         venue_node = {'id': venue_id, 'type': 'venue', 'attr': venue_type}
+        # print('venue type {}'.format(venue_type))
         graph.add_edge(paper_nodes[paper_id], venue_node, time=int(tokens[1]), relation_type='PV_' + venue_type)
 
 org_count = len(paper_nodes)

@@ -44,7 +44,11 @@ with open(filename) as fin:
     for line in tqdm(fin, total=line_count):
         tokens = line.strip().split('\t')
         paper_id = tokens[1]
+
+        # count number of citation for dict
         cite_dict[paper_id] += 1
+        # print('citint: {}'.format(tokens))
+input('debugging step 1')
 
 filename = 'Papers%s_20190919.tsv' % args.domain
 print(f'Reading Paper nodes from {filename}...')
@@ -64,6 +68,7 @@ with open(filename) as fin:
         title = tokens[2]
         venue_id = tokens[3]
         lang = tokens[4]
+        # print('title {}'.format(title))
 
         bound = min(2020 - int(time), 20) * args.citation_bar
 
@@ -96,7 +101,7 @@ with open(filename) as fin:
     for line in tqdm(fin, total=line_count):
         try:
             indexFile = indexFile + 1
-            print('indexFile {}'.format(indexFile))
+            # print('indexFile {}'.format(indexFile))
             if indexFile==10000:
                 break
             tokens = line.split('\t')
@@ -443,5 +448,5 @@ print()
 del graph.node_backward
 
 print('Writting graph in file:')
-dill.dump(graph, open(args.output_dir + '/graph%s.pk' % args.domain, 'wb'))
+dill.dump(graph, open(args.output_dir + '/graph_SPOC%s.pk' % args.domain, 'wb'))
 print('Done.')

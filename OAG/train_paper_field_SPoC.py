@@ -78,17 +78,19 @@ if args.cuda != -1:
 else:
     device = torch.device("cpu")
 
-graph = renamed_load(open(os.path.join(args.data_dir, 'graph%s.pk' % args.domain), 'rb'))
+graph = renamed_load(open(os.path.join(args.data_dir, 'graphSPOC_%s.pk' % args.domain), 'rb'))
 
 train_range = {t: True for t in graph.times if t != None and t < 2015}
 valid_range = {t: True for t in graph.times if t != None and t >= 2015  and t <= 2016}
 test_range  = {t: True for t in graph.times if t != None and t > 2016}
 
 types = graph.get_types()
+print('types {}'.format(str(graph.edge_list['field']['paper']['PF_in_L2'])))
 '''
     cand_list stores all the L2 fields, which is the classification domain.
 '''
 cand_list = list(graph.edge_list['field']['paper']['PF_in_L2'].keys())
+# print('cand list {} {}'.format(len(cand_list),cand_list))
 '''
 Use KL Divergence here, since each paper can be associated with multiple fields.
 Thus this task is a multi-label classification.
@@ -271,6 +273,7 @@ for epoch in np.arange(args.n_epoch) + 1:
     model.eval()
     with torch.no_grad():
         node_feature, node_type, edge_time, edge_index, edge_type, x_ids, ylabel = valid_data
+        print('yLabel {} {} {}'.format(ylabel.ndim,len(ylabel[0]),len(ylabel[1])))
         node_rep = gnn.forward(node_feature.to(device), node_type.to(device), \
                                    edge_time.to(device), edge_index.to(device), edge_type.to(device))
         res  = classifier.forward(node_rep[x_ids])
