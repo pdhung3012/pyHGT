@@ -114,12 +114,14 @@ arrText=f1.read().strip().split('\n')
 f1.close()
 
 f1 = open(fpStep6LabelTrain, 'r')
-arrLabel = f1.read().strip()
+arrLabel = f1.read().strip().split('\n')
 f1.close()
 
 time=0
+dictIdsAddToWholeGraph={}
 for i in range(0,len(arrText)):
     arrItem=arrText[i].split('\t')
+
     strLabel=arrLabel[i].split('\t')[1]
     if len(arrItem)>=2:
         key=arrItem[0]
@@ -165,7 +167,7 @@ for i in range(0,len(arrText)):
                     lstAddToGraph.append(idPar)
             lstAddToGraph.append(id)
         lstItemAST = []
-        lookUpJSonObjectStep2(dictJson, lstAddToGraph, time,graph)
+        lookUpJSonObjectStep2(dictJson, lstAddToGraph,dictIdsAddToWholeGraph, time,graph)
 
 
 
