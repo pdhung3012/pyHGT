@@ -21,16 +21,50 @@ strPREFIXEND=' PREFIXEND '
 strPOSTFIXSTART=' POSTFIXSTART '
 strPOSTFIXEND=' POSTFIXEND '
 
-def lookUpJSonObject(dictJson,lstTextAST):
+
+def lookUpJSonObjectTakeAll(dictJson,  lstTextAST):
+    strId = dictJson['id']
     if 'type' in dictJson.keys():
-        strType=dictJson['type'].replace('\t',strTABCHAR).replace('\n',strEndLine).strip()
+        startLine = dictJson['startLine']
+        endLine = dictJson['endLine']
+        strType = dictJson['type'].replace('\t', strTABCHAR).replace('\n', strEndLine).strip()
         lstTextAST.append(strType)
+
+    if 'children' in dictJson.keys():
+        lstChildren = dictJson['children']
+        for child in lstChildren:
+            strChildId = lookUpJSonObjectTakeAll(child,  lstTextAST)
+
+    return strId
+
+def lookUpJSonObject(dictJson,dictFatherId,lstAppearId,lstTextAST,indexComment,offsetComment):
+    strId=dictJson['id']
+    if 'type' in dictJson.keys():
+        startLine=dictJson['startLine']
+        endLine = dictJson['endLine']
+        if startLine>=(indexComment-offsetComment) and endLine<=(indexComment+offsetComment):
+            strType=dictJson['type'].replace('\t',strTABCHAR).replace('\n',strEndLine).strip()
+            lstTextAST.append(strType)
+            lstAppearId.append(strId)
 
     if 'children' in dictJson.keys():
         lstChildren=dictJson['children']
         for child in lstChildren:
-            lookUpJSonObject(child,lstTextAST)
+            strChildId=lookUpJSonObject(child,dictFatherId,lstAppearId,lstTextAST,indexComment,offsetComment)
+            dictFatherId[strChildId]=strId
+    return strId
 
+def lookUpJSonObjectStep2(dictJson, lstAddToGraph,lstTextAST):
+    strId=dictJson['id']
+    if 'type' in dictJson.keys():
+        if strId in lstAddToGraph:
+            strType=dictJson['type'].replace('\t',strTABCHAR).replace('\n',strEndLine).strip()
+            lstTextAST.append(strType)
+    if 'children' in dictJson.keys():
+        lstChildren=dictJson['children']
+        for child in lstChildren:
+            strChildId=lookUpJSonObjectStep2(child,lstAddToGraph,lstTextAST)
+    return strId
 
 
 def getEmbeddingForCodeAndWords(fpOriginLabel,fopCode,fopAST,fpOutputText,fpOutputAST,fpOutputLabel):
@@ -90,13 +124,38 @@ def getEmbeddingForCodeAndWords(fpOriginLabel,fopCode,fopAST,fpOutputText,fpOutp
                     f1.close()
                     jsonOfCorrectVersion = ast.literal_eval(strJson)
                     lstItemAST=[]
-                    lookUpJSonObject(jsonOfCorrectVersion, lstItemAST)
+                    lstAppearId=[]
+                    dictFatherId={}
+                    lookUpJSonObject(jsonOfCorrectVersion,dictFatherId,lstAppearId,lstItemAST,indexComment,offsetComment)
+
+                    lstAddToGraph=[]
+                    for id in lstAppearId:
+                        strIdItem=id
+                        lstAncestor=[]
+                        while strIdItem in dictFatherId.keys():
+                            strIdItem=dictFatherId[strIdItem]
+                            lstAncestor.insert(0,strIdItem)
+                        for idPar in lstAncestor:
+                            if idPar not in set(lstAddToGraph):
+                                lstAddToGraph.append(idPar)
+                        lstAddToGraph.append(id)
+
+                    lstItemAST = []
+                    lookUpJSonObjectStep2(jsonOfCorrectVersion, lstAddToGraph, lstItemAST)
+                    # print('len only offset {}'.format(len(lstItemAST)))
+                    # lstItemAST = []
+                    # lookUpJSonObjectTakeAll(jsonOfCorrectVersion, lstItemAST)
+                    # print('len only takeall {}'.format(len(lstItemAST)))
+
                     strItemAST=' '.join(lstItemAST)
                     lstTextD2v.append('{}\t{}'.format(key, strTextualComment))
                     lstLabelD2v.append('{}\t{}'.format(key, dictProgram[key]))
                     lstASTD2v.append('{}\t{}'.format(key, strItemAST))
                     indexGen=indexGen+1
-                    print('index gen {}/{}'.format(indexGen,lenGen))
+                    # if(indexGen==1000):
+                    #     break
+                    print('index gen {}/{}'.format(indexGen, lenGen))
+                    # print('index gen {}/{} {} {} {}'.format(indexGen,lenGen,len(lstTextD2v),len(lstASTD2v),len(lstLabelD2v)))
             except:
                 traceback.print_exc()
 
@@ -139,7 +198,7 @@ def generateD2VEmbedding(fpTrainText,fpTestPText,fpTestWText,fpTrainAST,fpTestPA
             key_Train.append(arrTabs[0])
             X_Train.append(arrTabs[1])
             itemAST=arrASTItems[i]
-            arrASTTabs=itemAST.split('\n')
+            arrASTTabs=itemAST.split('\t')
             ast_Train.append(arrASTTabs[1])
 
 
@@ -157,7 +216,7 @@ def generateD2VEmbedding(fpTrainText,fpTestPText,fpTestWText,fpTrainAST,fpTestPA
             key_TestP.append(arrTabs[0])
             X_TestP.append(arrTabs[1])
             itemAST = arrASTItems[i]
-            arrASTTabs = itemAST.split('\n')
+            arrASTTabs = itemAST.split('\t')
             ast_TestP.append(arrASTTabs[1])
 
             lstAllTextAST.append(arrTabs[1])
@@ -177,7 +236,7 @@ def generateD2VEmbedding(fpTrainText,fpTestPText,fpTestWText,fpTrainAST,fpTestPA
             X_TestW.append(arrTabs[1])
 
             itemAST = arrASTItems[i]
-            arrASTTabs = itemAST.split('\n')
+            arrASTTabs = itemAST.split('\t')
             ast_TestW.append(arrASTTabs[1])
 
             lstAllTextAST.append(arrTabs[1])
