@@ -343,7 +343,3 @@ getEmbeddingForCodeAndWords(fpStep5TestP,fopProgramTestP,fopStep3TestP,fpStep6Te
 getEmbeddingForCodeAndWords(fpStep5TestW,fopProgramTestW,fopStep3TestW,fpStep6TextTestW,fpStep6ASTTestW,fpStep6LabelTestW)
 generateD2VEmbedding(fpStep6TextTrain,fpStep6TextTestP,fpStep6TextTestW,fpStep6ASTTrain,fpStep6ASTTestP,fpStep6ASTTestW,fpStep6OutEmbedded,fpStep6OutModel)
 
-
-
-
-
