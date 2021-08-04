@@ -49,7 +49,9 @@ def lookUpJSonObject(dictJson,dictFatherId,lstAppearId,indexComment,offsetCommen
     if 'type' in dictJson.keys():
         startLine=dictJson['startLine']
         endLine = dictJson['endLine']
+
         if startLine>=(indexComment-offsetComment) and endLine<=(indexComment+offsetComment):
+            # print('id {}'.format(strId))
             strType=dictJson['type'].strip()
             lstAppearId.append(strId)
 
@@ -64,35 +66,43 @@ def lookUpJSonObjectStep2(dictJson, lstAddToGraph,dictIdsAddToWholeGraph,time,gr
     strId=dictJson['id']
     itemNode={}
     if 'type' in dictJson.keys():
+
         if strId in lstAddToGraph:
+            # print('go here')
             strType=dictJson['type'].strip()
             if strType not in dictIdsAddToWholeGraph.keys():
                 if 'isRootNode' in dictJson.keys():
-                    itemNode={'id': strType, 'type': 'program', 'attr': 'ast'}
+                    itemNode={'id': strType, 'type': 'program', 'attr': dictJson['statementType']}
                 else:
-                    itemNode = {'id': strType, 'type': 'ast', 'attr': dictJson['statementType']}
+                    itemNode = {'id': strType, 'type': 'ast', 'attr': 'ast'}
+                # print('strType {}'.format(strType))
                 dictIdsAddToWholeGraph[strType] = itemNode
+            else:
+                itemNode=dictIdsAddToWholeGraph[strType]
 
 
     if 'children' in dictJson.keys():
         lstChildren=dictJson['children']
         for child in lstChildren:
             childNode=lookUpJSonObjectStep2(child,lstAddToGraph,dictIdsAddToWholeGraph,time,graph)
-            graph.add_edge(itemNode,childNode,time=time, relation_type='ast_edge')
+            # print('child {}'.format(childNode))
+            if str(childNode)!='{}':
+                graph.add_edge(itemNode,childNode,time=time, relation_type='ast_edge')
     if 'nlGraph' in dictJson.keys():
         dictNL=dictJson['nlGraph']
+        dictNL['label']='nlGraph'
         nlNode=addNLNodeToGraph(dictNL,lstAddToGraph,dictIdsAddToWholeGraph,time,graph)
         graph.add_edge(itemNode, nlNode,time=time, relation_type='ast_nl_edge')
     return itemNode
 
 def addNLNodeToGraph(dictNL, lstAddToGraph, dictIdsAddToWholeGraph,time, graph):
-    strLabel = dictJson['label'].strip()
+    strLabel = dictNL['label'].strip()
     itemNode = {'id': strLabel, 'type': 'nl_nonterminal', 'attr': 'nl'}
     dictIdsAddToWholeGraph[strLabel] = itemNode
 
     lstChildren = dictNL['children']
     for i in range(0, len(lstChildren)):
-        childNode = addNLNodeToGraph(lstChildren[i],  lstAddToGraph, dictIdsAddToWholeGraph, graph)
+        childNode = addNLNodeToGraph(lstChildren[i],  lstAddToGraph, dictIdsAddToWholeGraph,time, graph)
         graph.add_edge(itemNode, childNode, relation_type='nl_pos_edge',time=time)
 
 
@@ -106,71 +116,93 @@ def addNLNodeToGraph(dictNL, lstAddToGraph, dictIdsAddToWholeGraph,time, graph):
             dictIdsAddToWholeGraph[nodeTarget['id']] = nodeTarget
             graph.add_edge(nodeSource, nodeTarget, relation_type='nl_dep_edge_{}'.format(tup[2]),time=time)
     return itemNode
-graph = Graph()
 
+
+def createHGTGraph(fpStep6Text,fpStep6Label,fopProgram,fopStep3,dictIdsAddToWholeGraph,time,graph):
 # load graph by id
-f1=open(fpStep6TextTrain,'r')
-arrText=f1.read().strip().split('\n')
-f1.close()
+    f1=open(fpStep6Text,'r')
+    arrText=f1.read().strip().split('\n')
+    f1.close()
 
-f1 = open(fpStep6LabelTrain, 'r')
-arrLabel = f1.read().strip().split('\n')
-f1.close()
+    f1 = open(fpStep6Label, 'r')
+    arrLabel = f1.read().strip().split('\n')
+    f1.close()
+
+
+    # dictIdsAddToWholeGraph={}
+    for i in range(0,len(arrText)):
+        arrItem=arrText[i].split('\t')
+
+        strLabel=arrLabel[i].split('\t')[1]
+        if len(arrItem)>=2:
+            key=arrItem[0]
+            fpItemCode=fopProgram+key+'.cpp'
+            f1=open(fpItemCode,'r')
+            arrItemCode=f1.read().strip().split('\n')
+            f1.close()
+
+            indexComment=-1
+            for j in range(0,len(arrItemCode)):
+                itemStrip=arrItemCode[j].strip()
+                if itemStrip.startswith('//'):
+                    indexComment=j
+                    break
+
+
+
+            fpItemAST=fopStep3+key+'_ast.txt'
+            f1=open(fpItemAST,'r')
+            strJson=f1.read().strip().split('\n')[1]
+            f1.close()
+
+            dictJson=ast.literal_eval(strJson)
+            dictJson['type']=key
+            dictJson['isRootNode']=1
+            dictJson['statementType']=strLabel
+            time=time+1
+
+            lstItemAST = []
+            lstAppearId = []
+            dictFatherId = {}
+            # print('indexCmt {}'.format(indexComment))
+            lookUpJSonObject(dictJson, dictFatherId, lstAppearId, indexComment, offsetComment)
+            # print('lstAppearId {}'.format(lstAppearId))
+            lstAddToGraph = []
+            for id in lstAppearId:
+                strIdItem = id
+                lstAncestor = []
+                while strIdItem in dictFatherId.keys():
+                    strIdItem = dictFatherId[strIdItem]
+                    lstAncestor.insert(0, strIdItem)
+                for idPar in lstAncestor:
+                    if idPar not in set(lstAddToGraph):
+                        lstAddToGraph.append(idPar)
+                lstAddToGraph.append(id)
+            lstItemAST = []
+            # print('lstAddToGraph {}'.format(lstAddToGraph))
+            lookUpJSonObjectStep2(dictJson, lstAddToGraph,dictIdsAddToWholeGraph, time,graph)
+            print('end {}/{}'.format(i,len(arrText)))
+            if i == 10000:
+                if 'train' in fopStep3:
+                    break
+            elif i==1000:
+                if not 'train' in fopStep3:
+                    break
+
+    return time
 
 time=0
+graph = Graph()
 dictIdsAddToWholeGraph={}
-for i in range(0,len(arrText)):
-    arrItem=arrText[i].split('\t')
 
-    strLabel=arrLabel[i].split('\t')[1]
-    if len(arrItem)>=2:
-        key=arrItem[0]
-        fpItemCode=fopProgramTrain+key+'.cpp'
-        f1=open(fpItemCode,'r')
-        arrItemCode=f1.read().strip()
-        f1.close()
+time=createHGTGraph(fpStep6TextTrain,fpStep6LabelTrain,fopProgramTrain,fopStep3Train,dictIdsAddToWholeGraph,time,graph)
+trainOffset=time
+time=createHGTGraph(fpStep6TextTestP,fpStep6LabelTestP,fopProgramTestP,fopStep3TestP,dictIdsAddToWholeGraph,time,graph)
+testPOffset=time
+time=createHGTGraph(fpStep6TextTestW,fpStep6LabelTestW,fopProgramTestW,fopStep3TestW,dictIdsAddToWholeGraph,time,graph)
+testWOffset=time
 
-        indexComment=-1
-        for j in range(0,len(arrItemCode)):
-            itemStrip=arrItemCode[j].strip()
-            if itemStrip.startswith('//'):
-                indexComment=j
-                break
-
-
-
-        fpItemAST=fopStep3Train+key+'_ast.txt'
-        f1=open(fpItemAST,'r')
-        strJson=f1.read().strip().split('\n')[1]
-        f1.close()
-
-        dictJson=ast.literal_eval(strJson)
-        dictJson['type']=key
-        dictJson['isRootNode']=1
-        dictJson['statementType']=strLabel
-        time=time+1
-
-        lstItemAST = []
-        lstAppearId = []
-        dictFatherId = {}
-        lookUpJSonObject(dictJson, dictFatherId, lstAppearId, indexComment, offsetComment)
-
-        lstAddToGraph = []
-        for id in lstAppearId:
-            strIdItem = id
-            lstAncestor = []
-            while strIdItem in dictFatherId.keys():
-                strIdItem = dictFatherId[strIdItem]
-                lstAncestor.insert(0, strIdItem)
-            for idPar in lstAncestor:
-                if idPar not in set(lstAddToGraph):
-                    lstAddToGraph.append(idPar)
-            lstAddToGraph.append(id)
-        lstItemAST = []
-        lookUpJSonObjectStep2(dictJson, lstAddToGraph,dictIdsAddToWholeGraph, time,graph)
-
-
-
+print('train {} testP {} testW {}'.format(trainOffset,testPOffset,testWOffset))
 print('Writting graph in file:')
 dill.dump(graph, open(fopStep6 + '/graph_spoc.pk' , 'wb'))
 print('Done.')
