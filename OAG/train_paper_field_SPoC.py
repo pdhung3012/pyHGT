@@ -5,13 +5,55 @@ from pyHGT.data import *
 from pyHGT.model import *
 from warnings import filterwarnings
 filterwarnings("ignore")
+import argparse
+
+from transformers import *
+
+from pyHGT.data import *
+from gensim.models.doc2vec import Doc2Vec, TaggedDocument
+from nltk.tokenize import word_tokenize
+from UtilFunctions import createDirIfNotExist
+from tree_sitter import Language, Parser
+sys.path.append(os.path.abspath(os.path.join('..')))
+sys.path.append(os.path.abspath(os.path.join('../../')))
+import ast
+
 
 import argparse
 
-fopParent='../../dataPapers/'
-# fopInputDir=fopParent+'HGT_data/MAG_0919_CS/'
-fopOutputDir=fopParent+'HGT_data/bag_output/'
-fopModelDir=fopParent+'HGT_data/bag_model/'
+# fopParent='../../dataPapers/'
+# # fopInputDir=fopParent+'HGT_data/MAG_0919_CS/'
+# fopOutputDir=fopParent+'HGT_data/bag_output/'
+# fopModelDir=fopParent+'HGT_data/bag_model/'
+fopRootData='../../dataPapers/textInSPOC/mixCode_v2/'
+fopStep2=fopRootData+'step2/'
+fopStep3=fopRootData+'step3_treesitter/'
+fopStep5=fopRootData+'step5/'
+fopStep6=fopRootData+'step6/'
+createDirIfNotExist(fopStep6)
+fopProgramTrain=fopStep2+'train/'
+fopProgramTestP=fopStep2+'testP/'
+fopProgramTestW=fopStep2+'testW/'
+fopStep3Train=fopStep3+'train/'
+fopStep3TestP=fopStep3+'testP/'
+fopStep3TestW=fopStep3+'testW/'
+
+fpStep5Train=fopStep5+'train'+'_label.txt'
+fpStep5TestP=fopStep5+'testP'+'_label.txt'
+fpStep5TestW=fopStep5+'testW'+'_label.txt'
+
+fpStep6TextTrain=fopStep6+'train.text.txt'
+fpStep6ASTTrain=fopStep6+'train.ast.txt'
+fpStep6LabelTrain=fopStep6+'train.label.txt'
+fpStep6TextTestP=fopStep6+'testP.text.txt'
+fpStep6ASTTestP=fopStep6+'testP.ast.txt'
+fpStep6LabelTestP=fopStep6+'testP.label.txt'
+fpStep6TextTestW=fopStep6+'testW.text.txt'
+fpStep6ASTTestW=fopStep6+'testW.ast.txt'
+fpStep6LabelTestW=fopStep6+'testW.label.txt'
+fpStep6OutEmbedded=fopStep6+'spoc.emb.txt'
+fpStep6OutModel=fopStep6+'spoc.d2v.model'
+
 
 
 
@@ -20,9 +62,9 @@ parser = argparse.ArgumentParser(description='Training GNN on Paper-Field (L2) c
 '''
     Dataset arguments
 '''
-parser.add_argument('--data_dir', type=str, default=fopOutputDir,
+parser.add_argument('--data_dir', type=str, default=fopStep6,
                     help='The address of preprocessed graph.')
-parser.add_argument('--model_dir', type=str, default=fopModelDir,
+parser.add_argument('--model_dir', type=str, default=fopStep6,
                     help='The address for storing the models and optimization results.')
 parser.add_argument('--task_name', type=str, default='PF',
                     help='The name of the stored models and optimization results.')
@@ -78,11 +120,11 @@ if args.cuda != -1:
 else:
     device = torch.device("cpu")
 
-graph = renamed_load(open(os.path.join(args.data_dir, 'graph_SPOC%s.pk' % args.domain), 'rb'))
+graph = renamed_load(open(os.path.join(args.data_dir, 'graph_spoc.pk' ), 'rb'))
 
-train_range = {t: True for t in graph.times if t != None and t < 2015}
-valid_range = {t: True for t in graph.times if t != None and t >= 2015  and t <= 2016}
-test_range  = {t: True for t in graph.times if t != None and t > 2016}
+train_range = {t: True for t in graph.times if t != None and t < 10002}
+valid_range = {t: True for t in graph.times if t != None and t >= 100002  and t <= 11002}
+test_range  = {t: True for t in graph.times if t != None and t > 11002}
 
 types = graph.get_types()
 print('types {}'.format(str(graph.edge_list['field']['paper']['PF_in_L2'])))

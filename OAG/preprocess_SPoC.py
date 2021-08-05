@@ -202,6 +202,17 @@ testPOffset=time
 time=createHGTGraph(fpStep6TextTestW,fpStep6LabelTestW,fopProgramTestW,fopStep3TestW,dictIdsAddToWholeGraph,time,graph)
 testWOffset=time
 
+f1=open(fpStep6OutEmbedded,'r')
+arrEmbeddeds=f1.read().strip().split('\n')
+f1.close()
+for i in range(0,len(arrEmbeddeds)):
+    arrItem=arrEmbeddeds[i].split('\t')
+    key=arrItem[0]
+    val=arrItem[1]
+    if key in dictIdsAddToWholeGraph.keys():
+        nodeItem=dictIdsAddToWholeGraph[key]
+        nodeItem['emb']=np.array(val.split(' '))
+
 print('train {} testP {} testW {}'.format(trainOffset,testPOffset,testWOffset))
 print('Writting graph in file:')
 dill.dump(graph, open(fopStep6 + '/graph_spoc.pk' , 'wb'))
