@@ -223,7 +223,8 @@ input('sel train {}'.format(args.data_percentage))
     Initialize GNN (model is specified by conv_name) and Classifier
 '''
 # print('type GNN {}'.format(type(graph.node_feature['paper']['emb'].values[0])))
-# print(' GNN {}'.format(graph.node_feature['paper']))
+print(' GNN {}'.format(len(graph.node_feature['paper']['emb'].values[0])))
+input('before GNN')
 gnn = GNN(conv_name = args.conv_name, in_dim = len(graph.node_feature['paper']['emb'].values[0]) + 401, \
           n_hid = args.n_hid, n_heads = args.n_heads, n_layers = args.n_layers, dropout = args.dropout,\
           num_types = len(graph.get_types()), num_relations = len(graph.get_meta_graph()) + 1).to(device)
@@ -262,14 +263,14 @@ for epoch in np.arange(args.n_epoch) + 1:
     train_data = [job.get() for job in jobs[:0]]
     valid_data = jobs[0].get()
 
-    print('type of train data {}'.format(type(train_data)))
-    print('len train {}'.format(len(train_data)))
-    for tupItem in train_data:
-        print('type tupItem {}'.format(type(tupItem)))
-        if isinstance(tupItem, torch.Tensor):
-            print('shape {}'.format(tupItem.shape))
-        else:
-            print('len of ndarray {}'.format(len(tupItem)))
+    # print('type of train data {}'.format(type(train_data)))
+    # print('len train {}'.format(len(train_data)))
+    # for tupItem in train_data:
+    #     print('type tupItem {}'.format(type(tupItem)))
+    #     if isinstance(tupItem, torch.Tensor):
+    #         print('shape {}'.format(tupItem.shape))
+    #     else:
+    #         print('len of ndarray {}'.format(len(tupItem)))
 
     # print('type of valid data {}'.format(type(valid_data)))
     # for tupItem in valid_data:
@@ -278,7 +279,7 @@ for epoch in np.arange(args.n_epoch) + 1:
     #         print('shape {}'.format(tupItem.shape))
     #     else:
     #         print('len of ndarray {}'.format(len(tupItem)))
-    input('data of valid')
+    # input('data of valid')
     pool.close()
     pool.join()
     '''
@@ -302,9 +303,9 @@ for epoch in np.arange(args.n_epoch) + 1:
             res  = classifier.forward(node_rep[x_ids])
             loss = criterion(res, torch.FloatTensor(ylabel).to(device))
 
-            print('res type {}\n {}'.format(type(res),res))
-            print('loss type {}\n {}'.format(type(loss), loss))
-            input('train batch')
+            # print('res type {}\n {}'.format(type(res),res))
+            # print('loss type {}\n {}'.format(type(loss), loss))
+            # input('train batch')
 
             optimizer.zero_grad() 
             torch.cuda.empty_cache()
@@ -327,9 +328,9 @@ for epoch in np.arange(args.n_epoch) + 1:
                                    edge_time.to(device), edge_index.to(device), edge_type.to(device))
         res  = classifier.forward(node_rep[x_ids])
         loss = criterion(res, torch.FloatTensor(ylabel).to(device))
-        print('res type {}\n {}'.format(type(res), res))
-        print('label type {}\n {}'.format(type(ylabel), ylabel))
-        input('valid batch')
+        # print('res type {}\n {}'.format(type(res), res))
+        # print('label type {}\n {}'.format(type(ylabel), ylabel))
+        # input('valid batch')
 
         '''
             Calculate Valid NDCG. Update the best model based on highest NDCG score.
