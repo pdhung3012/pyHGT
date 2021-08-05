@@ -182,13 +182,12 @@ def createHGTGraph(fpStep6Text,fpStep6Label,fopProgram,fopStep3,dictIdsAddToWhol
             # print('lstAddToGraph {}'.format(lstAddToGraph))
             lookUpJSonObjectStep2(dictJson, lstAddToGraph,dictIdsAddToWholeGraph, time,graph)
             print('end {}/{}'.format(i,len(arrText)))
-            if i == 10000:
+            if i == 200:
                 if 'train' in fopStep3:
                     break
-            elif i==1000:
+            elif i==100:
                 if not 'train' in fopStep3:
                     break
-
     return time
 
 time=0
@@ -212,6 +211,11 @@ for i in range(0,len(arrEmbeddeds)):
     if key in dictIdsAddToWholeGraph.keys():
         nodeItem=dictIdsAddToWholeGraph[key]
         nodeItem['emb']=np.array(val.split(' '))
+
+print('Calculating embeddings for non-Paper nodes...')
+df = pd.DataFrame(graph.node_backward['program'])
+print(df)
+graph.node_feature = {'program': df}
 
 print('train {} testP {} testW {}'.format(trainOffset,testPOffset,testWOffset))
 print('Writting graph in file:')

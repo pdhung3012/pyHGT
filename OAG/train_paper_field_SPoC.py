@@ -240,7 +240,10 @@ sel_valid_pairs = {p : valid_pairs[p] for p in np.random.choice(list(valid_pairs
 '''
     Initialize GNN (model is specified by conv_name) and Classifier
 '''
-gnn = GNN(conv_name = args.conv_name, in_dim = len(graph.node_feature['paper']['emb'].values[0]) + 401, \
+print('node_feature {}'.format(graph.get_types()))
+print('type GNN {}'.format(type(graph.node_feature['program']['emb'].values[0])))
+print(' GNN {}'.format(graph.node_feature['program']))
+gnn = GNN(conv_name = args.conv_name, in_dim = len(graph.node_feature['program']['emb'].values[0]) + 401, \
           n_hid = args.n_hid, n_heads = args.n_heads, n_layers = args.n_layers, dropout = args.dropout,\
           num_types = len(graph.get_types()), num_relations = len(graph.get_meta_graph()) + 1).to(device)
 classifier = Classifier(args.n_hid, len(cand_list)).to(device)

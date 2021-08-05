@@ -89,6 +89,16 @@ types = graph.get_types()
     cand_list stores all the L2 fields, which is the classification domain.
 '''
 cand_list = list(graph.edge_list['field']['paper']['PF_in_L2'].keys())
+# print('type of candlist {} {}'.format(type(cand_list),len(cand_list)))
+# print(cand_list)
+# input('end cand list')
+#
+# cand_list_2 = graph.edge_list['field']['paper']['PF_in_L2']
+# print('type of candlist 2 {} {}'.format(type(cand_list_2),len(cand_list_2)))
+# print(cand_list_2)
+# input('end cand list 2')
+
+
 '''
 Use KL Divergence here, since each paper can be associated with multiple fields.
 Thus this task is a multi-label classification.
@@ -158,6 +168,9 @@ def prepare_data(pool):
         jobs.append(p)
     p = pool.apply_async(node_classification_sample, args=(randint(), \
             sel_valid_pairs, valid_range))
+    # print('set valid pairs')
+    # print(sel_valid_pairs)
+    # input('end of prepare data')
     jobs.append(p)
     return jobs
 
@@ -168,9 +181,15 @@ test_pairs  = {}
 '''
     Prepare all the souce nodes (L2 field) associated with each target node (paper) as dict
 '''
+objCand=graph.edge_list['paper']['field']['rev_PF_in_L2']
+# print('Type of graph.edge_list {}'.format(type(objCand)))
+# print('objCand {}'.format(objCand))
+# input('rev_PF_in_L2')
 for target_id in graph.edge_list['paper']['field']['rev_PF_in_L2']:
     for source_id in graph.edge_list['paper']['field']['rev_PF_in_L2'][target_id]:
         _time = graph.edge_list['paper']['field']['rev_PF_in_L2'][target_id][source_id]
+        # print('_time {} sourceid {} targetid {}'.format(_time,source_id,target_id))
+        # input('sample triple')
         if _time in train_range:
             if target_id not in train_pairs:
                 train_pairs[target_id] = [[], _time]
@@ -189,15 +208,22 @@ np.random.seed(43)
 '''
     Only train and valid with a certain percentage of data, if necessary.
 '''
+print('valid pair keys {}'.format(list(valid_pairs.keys())))
 sel_train_pairs = {p : train_pairs[p] for p in np.random.choice(list(train_pairs.keys()), int(len(train_pairs) * args.data_percentage), replace = False)}
 sel_valid_pairs = {p : valid_pairs[p] for p in np.random.choice(list(valid_pairs.keys()), int(len(valid_pairs) * args.data_percentage), replace = False)}
+print('set train and valid pairs')
+print('len train {}'.format(len(sel_train_pairs)))
+print(' train {}'.format(sel_train_pairs))
+print('len valid {}'.format(len(sel_valid_pairs)))
+print(' valid {}'.format(sel_valid_pairs))
 
+input('sel train {}'.format(args.data_percentage))
             
 '''
     Initialize GNN (model is specified by conv_name) and Classifier
 '''
-print('type GNN {}'.format(type(graph.node_feature['paper']['emb'].values[0])))
-print(' GNN {}'.format(graph.node_feature['paper']))
+# print('type GNN {}'.format(type(graph.node_feature['paper']['emb'].values[0])))
+# print(' GNN {}'.format(graph.node_feature['paper']))
 gnn = GNN(conv_name = args.conv_name, in_dim = len(graph.node_feature['paper']['emb'].values[0]) + 401, \
           n_hid = args.n_hid, n_heads = args.n_heads, n_layers = args.n_layers, dropout = args.dropout,\
           num_types = len(graph.get_types()), num_relations = len(graph.get_meta_graph()) + 1).to(device)
@@ -225,7 +251,9 @@ train_step = 50
 pool = mp.Pool(args.n_pool)
 st = time.time()
 jobs = prepare_data(pool)
+
 print('n_pool {} lenJobs {}'.format(args.n_pool,len(jobs)))
+print('job {} type job[0] {}'.format(type(jobs),type(jobs[0])))
 
 for epoch in np.arange(args.n_epoch) + 1:
     '''
@@ -233,6 +261,24 @@ for epoch in np.arange(args.n_epoch) + 1:
     '''
     train_data = [job.get() for job in jobs[:0]]
     valid_data = jobs[0].get()
+
+    print('type of train data {}'.format(type(train_data)))
+    print('len train {}'.format(len(train_data)))
+    for tupItem in train_data:
+        print('type tupItem {}'.format(type(tupItem)))
+        if isinstance(tupItem, torch.Tensor):
+            print('shape {}'.format(tupItem.shape))
+        else:
+            print('len of ndarray {}'.format(len(tupItem)))
+
+    # print('type of valid data {}'.format(type(valid_data)))
+    # for tupItem in valid_data:
+    #     print('type tupItem {}'.format(type(tupItem)))
+    #     if isinstance(tupItem,torch.Tensor):
+    #         print('shape {}'.format(tupItem.shape))
+    #     else:
+    #         print('len of ndarray {}'.format(len(tupItem)))
+    input('data of valid')
     pool.close()
     pool.join()
     '''
@@ -256,6 +302,10 @@ for epoch in np.arange(args.n_epoch) + 1:
             res  = classifier.forward(node_rep[x_ids])
             loss = criterion(res, torch.FloatTensor(ylabel).to(device))
 
+            print('res type {}\n {}'.format(type(res),res))
+            print('loss type {}\n {}'.format(type(loss), loss))
+            input('train batch')
+
             optimizer.zero_grad() 
             torch.cuda.empty_cache()
             loss.backward()
@@ -277,7 +327,10 @@ for epoch in np.arange(args.n_epoch) + 1:
                                    edge_time.to(device), edge_index.to(device), edge_type.to(device))
         res  = classifier.forward(node_rep[x_ids])
         loss = criterion(res, torch.FloatTensor(ylabel).to(device))
-        
+        print('res type {}\n {}'.format(type(res), res))
+        print('label type {}\n {}'.format(type(ylabel), ylabel))
+        input('valid batch')
+
         '''
             Calculate Valid NDCG. Update the best model based on highest NDCG score.
         '''
