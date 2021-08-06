@@ -6,7 +6,7 @@ import pandas as pd
 import sys
 sys.path.append(os.path.abspath(os.path.join('..')))
 
-from .utils import *
+from .utils_r2 import *
 
 import math
 from tqdm import tqdm
