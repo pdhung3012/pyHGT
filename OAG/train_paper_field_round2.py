@@ -79,18 +79,20 @@ else:
 
 graph = renamed_load(open(os.path.join(args.data_dir, 'graph%s.pk' % args.domain), 'rb'))
 
-train_range = {t: True for t in graph.times if t != None and t < 2015}
+# train_range = {t: True for t in graph.times if t != None and t < 2015}
+train_range = {t: True for t in graph.times if t != None and t <2015}
 valid_range = {t: True for t in graph.times if t != None and t >= 2015 and t <= 2016}
 test_range = {t: True for t in graph.times if t != None and t > 2016}
-
+print('train valid test {} \n {} \n {} \n'.format(train_range,valid_range,test_range))
 types = graph.get_types()
 '''
     cand_list stores all the L2 fields, which is the classification domain.
 '''
 cand_list = list(graph.edge_list['field']['paper']['PF_in_L2'].keys())
-# print('type of candlist {} {}'.format(type(cand_list),len(cand_list)))
+print('type of candlist {} {}'.format(type(cand_list),len(cand_list)))
+print('field paper pf {}'.format(len(graph.edge_list['field']['paper']['PF_in_L2'].keys())))
 # print(cand_list)
-# input('end cand list')
+input('end cand list')
 #
 # cand_list_2 = graph.edge_list['field']['paper']['PF_in_L2']
 # print('type of candlist 2 {} {}'.format(type(cand_list_2),len(cand_list_2)))
@@ -111,7 +113,7 @@ def node_classification_sample(seed, pairs, time_range):
         (1) Sample batch_size number of output nodes (papers), get their time.
     '''
     np.random.seed(seed)
-    # print('go to here for classification')
+    # print('go to here for classification {}'.format(len(pairs)))
     target_ids = np.random.choice(list(pairs.keys()), args.batch_size, replace=True)
     target_info = []
     for target_id in target_ids:
@@ -143,7 +145,7 @@ def node_classification_sample(seed, pairs, time_range):
     '''
         (4) Transform the subgraph into torch Tensor (edge_index is in format of pytorch_geometric)
     '''
-    # print('feature {}'.format(feature))
+    # print('feature \nedge_list{}'.format(edge_list))
     node_feature, node_type, edge_time, edge_index, edge_type, node_dict, edge_dict = \
         to_torch(feature, times, edge_list, graph)
     '''
@@ -151,12 +153,25 @@ def node_classification_sample(seed, pairs, time_range):
             (node_dict[type][0] stores the start index of a specific type of nodes)
     '''
     ylabel = np.zeros([args.batch_size, len(cand_list)])
+    # print('len batch {} and len cand_list {} len yLabel {}'.format(args.batch_size,len(cand_list),len(ylabel)))
+
+    # input('check style of label')
+    # print('pair {}'.format(pairs))
+    # print('cand_list {}'.format(cand_list))
     for x_id, target_id in enumerate(target_ids):
         for source_id in pairs[target_id][0]:
+            # print('source_id {} target {}'.format(source_id,target_id))
             ylabel[x_id][cand_list.index(source_id)] = 1
+            # print('go here')
+    # print('ylaabel sum {}'.format(ylabel.sum(axis=1).reshape(-1, 1)))
     ylabel /= ylabel.sum(axis=1).reshape(-1, 1)
     x_ids = np.arange(args.batch_size) + node_dict['paper'][0]
+    # print('x_ids {}\nnode_dict[paper] {}'.format(x_ids,node_dict))
     # print('end classification')
+    # print('objCand 2 {}'.format(len(objCand)))
+    # print('yLabel2 2 {}'.format(len(ylabel)))
+    #
+    # print('x_ids {}\nyLabel {}\nedge_type {}'.format(1,ylabel.shape,edge_type.shape))
     return node_feature, node_type, edge_time, edge_index, edge_type, x_ids, ylabel
 
 
@@ -186,8 +201,8 @@ test_pairs = {}
 '''
 objCand = graph.edge_list['paper']['field']['rev_PF_in_L2']
 # print('Type of graph.edge_list {}'.format(type(objCand)))
-# print('objCand {}'.format(objCand))
-# input('rev_PF_in_L2')
+print('objCand {}'.format(len(objCand)))
+input('rev_PF_in_L2')
 for target_id in graph.edge_list['paper']['field']['rev_PF_in_L2']:
     for source_id in graph.edge_list['paper']['field']['rev_PF_in_L2'][target_id]:
         _time = graph.edge_list['paper']['field']['rev_PF_in_L2'][target_id][source_id]
@@ -205,7 +220,7 @@ for target_id in graph.edge_list['paper']['field']['rev_PF_in_L2']:
             if target_id not in test_pairs:
                 test_pairs[target_id] = [[], _time]
             test_pairs[target_id][0] += [source_id]
-
+# print('test_pairs {}'.format(test_pairs))
 np.random.seed(43)
 '''
     Only train and valid with a certain percentage of data, if necessary.
@@ -305,12 +320,13 @@ for epoch in np.arange(args.n_epoch) + 1:
         for node_feature, node_type, edge_time, edge_index, edge_type, x_ids, ylabel in train_data:
             node_rep = gnn.forward(node_feature.to(device), node_type.to(device), \
                                    edge_time.to(device), edge_index.to(device), edge_type.to(device))
+            print('x_ids {}\nedge_type {}\nylabel {}'.format(x_ids,edge_type,ylabel))
             res = classifier.forward(node_rep[x_ids])
             loss = criterion(res, torch.FloatTensor(ylabel).to(device))
 
             # print('res type {}\n {}'.format(type(res),res))
             # print('loss type {}\n {}'.format(type(loss), loss))
-            # input('train batch')
+            input('train batch')
 
             optimizer.zero_grad()
             torch.cuda.empty_cache()
@@ -387,7 +403,27 @@ with torch.no_grad():
             node_classification_sample(randint(), test_pairs, test_range)
         paper_rep = gnn.forward(node_feature.to(device), node_type.to(device), \
                                 edge_time.to(device), edge_index.to(device), edge_type.to(device))[x_ids]
+
         res = classifier.forward(paper_rep)
+        # print('paper {}\nres {}'.format(type(paper_rep),type(res)))
+        # print('paper {}\nres {}'.format(paper_rep.shape, res.shape))
+        for ind1 in range(0,len(res)):
+            lstGoodInds=[]
+            for ind2 in range(0,len(res[ind1])):
+                if res[ind1][ind2]>0:
+                    strItem='({}:{})'.format(ind2,res[ind1][ind2])
+                    lstGoodInds.append(strItem)
+            if len(lstGoodInds)>0:
+                print('res ind {} {}'.format(ind1,' , '.join(lstGoodInds)))
+        for ind1 in range(0,len(ylabel)):
+            lstGoodInds=[]
+            for ind2 in range(0,len(ylabel[ind1])):
+                if ylabel[ind1][ind2]>0:
+                    strItem='({}:{})'.format(ind2,ylabel[ind1][ind2])
+                    lstGoodInds.append(strItem)
+            if len(lstGoodInds)>0:
+                print('label ind {} {}'.format(ind1,' , '.join(lstGoodInds)))
+        # input('test  ')
         for ai, bi in zip(ylabel, res.argsort(descending=True)):
             test_res += [ai[bi.cpu().numpy()]]
     test_ndcg = [ndcg_at_k(resi, len(resi)) for resi in test_res]

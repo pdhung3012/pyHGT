@@ -62,6 +62,7 @@ def feature_OAG(layer_data, graph):
             feature[_type] = np.array(list(graph.node_feature[_type].loc[idxs, 'node_emb']), dtype=np.float)
         else:
             feature[_type] = np.zeros([len(idxs), 400])
+            # Hung change
         feature[_type] = np.concatenate((feature[_type], list(graph.node_feature[_type].loc[idxs, 'emb']),\
             np.log10(np.array(list(graph.node_feature[_type].loc[idxs, 'citation'])).reshape(-1, 1) + 0.01)), axis=1)
         
@@ -70,4 +71,5 @@ def feature_OAG(layer_data, graph):
         
         if _type == 'paper':
             texts = np.array(list(graph.node_feature[_type].loc[idxs, 'title']), dtype=np.str)
+            # texts=np.zeros(400)
     return feature, times, indxs, texts

@@ -406,44 +406,44 @@ for _type in graph.node_backward:
 # df['emb'] = list(out)
 # graph.node_feature['affiliation'] = df
 
-# print('Done.')
-# print()
-# print('Cleaning edge list...')
-# clean_edge_list = {}
-# # target_type
-# for k1 in graph.edge_list:
-#     if k1 not in clean_edge_list:
-#         clean_edge_list[k1] = {}
-#     # source_type
-#     for k2 in graph.edge_list[k1]:
-#         if k2 not in clean_edge_list[k1]:
-#             clean_edge_list[k1][k2] = {}
-#         # relation_type
-#         for k3 in graph.edge_list[k1][k2]:
-#             if k3 not in clean_edge_list[k1][k2]:
-#                 clean_edge_list[k1][k2][k3] = {}
-#
-#             triple_count = 0
-#             # target_idx
-#             for e1 in graph.edge_list[k1][k2][k3]:
-#                 edge_count = len(graph.edge_list[k1][k2][k3][e1])
-#                 triple_count += edge_count
-#                 if edge_count == 0:
-#                     continue
-#                 clean_edge_list[k1][k2][k3][e1] = {}
-#                 # source_idx
-#                 for e2 in graph.edge_list[k1][k2][k3][e1]:
-#                     clean_edge_list[k1][k2][k3][e1][e2] = graph.edge_list[k1][k2][k3][e1][e2]
-#             print(k1, k2, k3, triple_count)
-#
-# graph.edge_list = clean_edge_list
-# print()
-# print('Number of nodes:')
-# for node_type in graph.node_forward:
-#     print(f'{node_type}: {len(graph.node_forward[node_type]):,}')
-# print()
-#
-# del graph.node_backward
+print('Done.')
+print()
+print('Cleaning edge list...')
+clean_edge_list = {}
+# target_type
+for k1 in graph.edge_list:
+    if k1 not in clean_edge_list:
+        clean_edge_list[k1] = {}
+    # source_type
+    for k2 in graph.edge_list[k1]:
+        if k2 not in clean_edge_list[k1]:
+            clean_edge_list[k1][k2] = {}
+        # relation_type
+        for k3 in graph.edge_list[k1][k2]:
+            if k3 not in clean_edge_list[k1][k2]:
+                clean_edge_list[k1][k2][k3] = {}
+
+            triple_count = 0
+            # target_idx
+            for e1 in graph.edge_list[k1][k2][k3]:
+                edge_count = len(graph.edge_list[k1][k2][k3][e1])
+                triple_count += edge_count
+                if edge_count == 0:
+                    continue
+                clean_edge_list[k1][k2][k3][e1] = {}
+                # source_idx
+                for e2 in graph.edge_list[k1][k2][k3][e1]:
+                    clean_edge_list[k1][k2][k3][e1][e2] = graph.edge_list[k1][k2][k3][e1][e2]
+            print(k1, k2, k3, triple_count)
+
+graph.edge_list = clean_edge_list
+print()
+print('Number of nodes:')
+for node_type in graph.node_forward:
+    print(f'{node_type}: {len(graph.node_forward[node_type]):,}')
+print()
+
+del graph.node_backward
 
 print('Writting graph in file:')
 dill.dump(graph, open(args.output_dir + '/graph%s.pk' % args.domain, 'wb'))
