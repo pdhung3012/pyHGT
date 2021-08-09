@@ -200,6 +200,8 @@ def generateD2VEmbedding(fpTrainText,fpTestPText,fpTestWText,fpTrainAST,fpTestPA
             itemAST=arrASTItems[i]
             arrASTTabs=itemAST.split('\t')
             ast_Train.append(arrASTTabs[1])
+            lstAllTextAST.append(arrTabs[1])
+            lstAllTextAST.append(arrASTTabs[1])
 
 
 
