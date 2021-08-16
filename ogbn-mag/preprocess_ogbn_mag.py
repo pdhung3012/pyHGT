@@ -1,6 +1,13 @@
 from pyHGT.data import *
 from pyHGT.utils import *
 from ogb.nodeproppred import PygNodePropPredDataset
+from ogb.nodeproppred import Evaluator
+from UtilFunctions import createDirIfNotExist
+from tree_sitter import Language, Parser
+import sys,os
+sys.path.append(os.path.abspath(os.path.join('..')))
+sys.path.append(os.path.abspath(os.path.join('../../')))
+
 
 import argparse
 
@@ -9,7 +16,7 @@ parser = argparse.ArgumentParser(description='Preprocess ogbn-mag graph')
 '''
     Dataset arguments
 '''
-parser.add_argument('--output_dir', type=str, default='/datadrive/dataset/OGB_MAG.pk',
+parser.add_argument('--output_dir', type=str, default='dataset/OGB_MAG.pk',
                     help='The address to output the preprocessed graph.')
 
 args = parser.parse_args()
@@ -21,11 +28,12 @@ evaluator = Evaluator(name='ogbn-mag')
 edge_index_dict = data.edge_index_dict
 graph = Graph()
 edg   = graph.edge_list
-years = data.node_year_dict['paper'].t().numpy()[0]
+print('datta object {}'.format(data))
+years = data.node_year['paper'].t().numpy()[0]
 
 graph = Graph()
 edg   = graph.edge_list
-years = data.node_year_dict['paper'].t().numpy()[0]
+years = data.node_year['paper'].t().numpy()[0]
 for key in edge_index_dict:
     print(key)
     edges = edge_index_dict[key]

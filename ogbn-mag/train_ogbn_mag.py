@@ -22,7 +22,7 @@ parser = argparse.ArgumentParser(description='Training GNN on ogbn-mag benchmark
 
 
 
-parser.add_argument('--data_dir', type=str, default='/datadrive/dataset/OGB_MAG.pk',
+parser.add_argument('--data_dir', type=str, default='dataset/OGB_MAG.pk',
                     help='The address of preprocessed graph.')
 parser.add_argument('--model_dir', type=str, default='./hgt_4layer',
                     help='The address for storing the trained models.')
@@ -33,17 +33,17 @@ parser.add_argument('--cuda', type=int, default=0,
 parser.add_argument('--conv_name', type=str, default='hgt',
                     choices=['hgt', 'gcn', 'gat', 'rgcn', 'han', 'hetgnn'],
                     help='The name of GNN filter. By default is Heterogeneous Graph Transformer (hgt)')
-parser.add_argument('--n_hid', type=int, default=512,
+parser.add_argument('--n_hid', type=int, default=128,
                     help='Number of hidden dimension')
 parser.add_argument('--n_heads', type=int, default=8,
                     help='Number of attention head')
-parser.add_argument('--n_layers', type=int, default=4,
+parser.add_argument('--n_layers', type=int, default=2,
                     help='Number of GNN layers')
 parser.add_argument('--dropout', type=float, default=0.2,
                     help='Dropout ratio')
 parser.add_argument('--sample_depth', type=int, default=6,
                     help='How many numbers to sample the graph')
-parser.add_argument('--sample_width', type=int, default=520,
+parser.add_argument('--sample_width', type=int, default=130,
                     help='How many nodes to be sampled per layer per type')
 
 parser.add_argument('--n_epoch', type=int, default=100,
@@ -52,7 +52,7 @@ parser.add_argument('--n_pool', type=int, default=8,
                     help='Number of process to sample subgraph')    
 parser.add_argument('--n_batch', type=int, default=32,
                     help='Number of batch (sampled graphs) for each epoch') 
-parser.add_argument('--batch_size', type=int, default=128,
+parser.add_argument('--batch_size', type=int, default=16,
                     help='Number of output nodes for training')  
 parser.add_argument('--clip', type=float, default=1.0,
                     help='Gradient Norm Clipping') 
