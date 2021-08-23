@@ -28,12 +28,16 @@ evaluator = Evaluator(name='ogbn-mag')
 edge_index_dict = data.edge_index_dict
 graph = Graph()
 edg   = graph.edge_list
-print('datta object {}'.format(data))
+# print('datta object {}'.format(data))
 years = data.node_year['paper'].t().numpy()[0]
+# print('year 1 {} {}'.format(len(years),years))
 
 graph = Graph()
 edg   = graph.edge_list
 years = data.node_year['paper'].t().numpy()[0]
+# print('edg {} {}'.format(len(edg),edg))
+# print('year 2 {} {}'.format(len(years),years))
+# input('year')
 for key in edge_index_dict:
     print(key)
     edges = edge_index_dict[key]
@@ -49,7 +53,7 @@ for key in edge_index_dict:
         elist[t_id][s_id] = year
         rlist[s_id][t_id] = year
         
-        
+# input('end key ')
 edg = {}
 deg = {key : np.zeros(data.num_nodes[key]) for key in data.num_nodes}
 for k1 in graph.edge_list:
@@ -69,13 +73,17 @@ for k1 in graph.edge_list:
                 for e2 in graph.edge_list[k1][k2][k3][e1]:
                     edg[k1][k2][k3][e1][e2] = graph.edge_list[k1][k2][k3][e1][e2]
                 deg[k1][e1] += len(edg[k1][k2][k3][e1])
-            print(k1, k2, k3, len(edg[k1][k2][k3]))
+            print('item inside k1 k2 k3 ',k1, k2, k3, len(edg[k1][k2][k3]),type(edg[k1][k2][k3]))
 graph.edge_list = edg
 
 
 
 cv = data.x_dict['paper'].numpy()
+print('cv dddd {}'.format(cv.shape))
+# input('cv ')
 graph.node_feature['paper'] = np.concatenate((cv, np.log10(deg['paper'].reshape(-1, 1))), axis=-1)
+print('node_feature dddd {}'.format(graph.node_feature['paper'].shape))
+input('cv ')
 for _type in data.num_nodes:
     print(_type)
     if _type not in ['paper', 'institution']:
@@ -120,6 +128,8 @@ graph.train_paper = train_paper
 graph.valid_paper = valid_paper
 graph.test_paper  = test_paper
 graph.years       = years
+print('test paper {}'.format(test_paper))
+# input('test ')
 
 graph.train_mask = np.zeros(len(graph.node_feature['paper']), dtype=bool)
 graph.train_mask[graph.train_paper] = True
@@ -129,5 +139,8 @@ graph.valid_mask[graph.valid_paper] = True
 
 graph.test_mask = np.zeros(len(graph.node_feature['paper']),  dtype=bool)
 graph.test_mask[graph.test_paper] = True
+
+print('test mask {}'.format(graph.test_mask))
+input(' abc ')
 
 dill.dump(graph, open(args.output_dir, 'wb'))

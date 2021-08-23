@@ -24,7 +24,7 @@ parser = argparse.ArgumentParser(description='Training GNN on ogbn-mag benchmark
 
 parser.add_argument('--data_dir', type=str, default='dataset/OGB_MAG.pk',
                     help='The address of preprocessed graph.')
-parser.add_argument('--model_dir', type=str, default='./hgt_4layer',
+parser.add_argument('--model_dir', type=str, default='dataset/hgt_4layer',
                     help='The address for storing the trained models.')
 parser.add_argument('--plot', action='store_true',
                     help='Whether to plot the loss/acc curve')
@@ -73,6 +73,9 @@ def ogbn_sample(seed, samp_nodes):
                     feature_extractor = feature_MAG)
     node_feature, node_type, edge_time, edge_index, edge_type, node_dict, edge_dict = \
             to_torch(feature, times, edge_list, graph)
+    print(indxs['paper'])
+    # input('aaabbb ')
+
     train_mask = graph.train_mask[indxs['paper']]
     valid_mask = graph.valid_mask[indxs['paper']]
     test_mask  = graph.test_mask[indxs['paper']]
@@ -162,10 +165,14 @@ for epoch in np.arange(args.n_epoch) + 1:
         node_rep = gnn.forward(node_feature.to(device), node_type.to(device), \
                                edge_time.to(device), edge_index.to(device), edge_type.to(device))
         ylabel = torch.LongTensor(ylabel).to(device)
+        print('yLabel {}\{}'.format(ylabel.shape,len(ylabel)))
+        # print('node_rep {}'.format(node_rep.shape))
+        # input(' input ')
         train_res  = classifier.forward(node_rep[:len(ylabel)][train_mask])
         valid_res  = classifier.forward(node_rep[:len(ylabel)][valid_mask])
         test_res   = classifier.forward(node_rep[:len(ylabel)][test_mask])
-
+        print('test_res {}'.format(test_res.shape))
+        input(' input ')
         train_loss = criterion(train_res, ylabel[train_mask])
 
         optimizer.zero_grad() 
