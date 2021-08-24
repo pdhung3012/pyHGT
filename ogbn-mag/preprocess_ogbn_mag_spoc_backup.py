@@ -83,8 +83,9 @@ print('cv dddd {}'.format(cv.shape))
 # input('cv ')
 graph.node_feature['paper'] = np.concatenate((cv, np.log10(deg['paper'].reshape(-1, 1))), axis=-1)
 print('node_feature dddd {}'.format(graph.node_feature['paper'].shape))
-# input('cv ')
+input('cv ')
 for _type in data.num_nodes:
+    print(_type)
     if _type not in ['paper', 'institution']:
         i = []
         for _rel in graph.edge_list[_type]['paper']:
@@ -111,7 +112,7 @@ v = np.ones(i.shape[1])
 m = normalize(sp.coo_matrix((v, i), \
     shape=(data.num_nodes['institution'], data.num_nodes['author'])))
 out = m.dot(cv)
-graph.node_feature['institution'] = np.concatenate((out, np.log10(deg['institution'].reshape(-1, 1))), axis=-1)
+graph.node_feature['institution'] = np.concatenate((out, np.log10(deg['institution'].reshape(-1, 1))), axis=-1)     
 
 
 
@@ -139,7 +140,7 @@ graph.valid_mask[graph.valid_paper] = True
 graph.test_mask = np.zeros(len(graph.node_feature['paper']),  dtype=bool)
 graph.test_mask[graph.test_paper] = True
 
-# print('test mask {}'.format(graph.test_mask))
-# input(' abc ')
+print('test mask {}'.format(graph.test_mask))
+input(' abc ')
 
 dill.dump(graph, open(args.output_dir, 'wb'))
