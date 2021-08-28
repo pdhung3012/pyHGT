@@ -18,186 +18,112 @@ dictSourceTargetType['isProgramOfNLRoot'] = ('ProgramRoot', 'NLRoot')
 dictSourceTargetType['isPLFatherOf'] = ('ProgramElement', 'ProgramElement')
 dictSourceTargetType['isNLFatherOf'] = ('NLElement', 'NLElement')
 
-def generateRandomDataset(fopDataset):
-    # generate ds for ProgramRoot
-    createDirIfNotExist(fopDataset)
-    fpProgramRoot=fopDataset+'ProgramRoot.txt'
-    fpProgramElement = fopDataset + 'ProgramElement.txt'
-    fpNLRoot = fopDataset + 'NLRoot.txt'
-    fpNLElement = fopDataset + 'NLElement.txt'
-    fpEdgeList = fopDataset + 'edgeLists.txt'
-    fpLabelList = fopDataset + 'labelLists.txt'
+fopRootData='../../dataPapers/textInSPOC/mixCode_v2/'
+fopStep2=fopRootData+'step2/'
+fopStep3=fopRootData+'step3_treesitter/'
+fopStep5=fopRootData+'step5/'
+fopStep6=fopRootData+'step6/'
+createDirIfNotExist(fopStep6)
+fopProgramTrain=fopStep2+'train/'
+fopProgramTestP=fopStep2+'testP/'
+fopProgramTestW=fopStep2+'testW/'
+fopStep3Train=fopStep3+'train/'
+fopStep3TestP=fopStep3+'testP/'
+fopStep3TestW=fopStep3+'testW/'
+
+fpStep5Train=fopStep5+'train'+'_label.txt'
+fpStep5TestP=fopStep5+'testP'+'_label.txt'
+fpStep5TestW=fopStep5+'testW'+'_label.txt'
+
+fpStep6TextTrain=fopStep6+'train.text.txt'
+fpStep6ASTTrain=fopStep6+'train.ast.txt'
+fpStep6LabelTrain=fopStep6+'train.label.txt'
+fpStep6TextTestP=fopStep6+'testP.text.txt'
+fpStep6ASTTestP=fopStep6+'testP.ast.txt'
+fpStep6LabelTestP=fopStep6+'testP.label.txt'
+fpStep6TextTestW=fopStep6+'testW.text.txt'
+fpStep6ASTTestW=fopStep6+'testW.ast.txt'
+fpStep6LabelTestW=fopStep6+'testW.label.txt'
+fpStep6OutEmbedded=fopStep6+'spoc.emb.txt'
+fpStep6OutModel=fopStep6+'spoc.d2v.model'
+
+parser = argparse.ArgumentParser(description='Preprocess OAG (CS/Med/All) Data')
+
+offsetComment=3
+
+def lookUpJSonObject(dictJson,dictFatherId,lstAppearId,indexComment,offsetComment):
+    strId=dictJson['id']
+    if 'type' in dictJson.keys():
+        startLine=dictJson['startLine']
+        endLine = dictJson['endLine']
+
+        if startLine>=(indexComment-offsetComment) and endLine<=(indexComment+offsetComment):
+            # print('id {}'.format(strId))
+            strType=dictJson['type'].strip()
+            lstAppearId.append(strId)
+
+    if 'children' in dictJson.keys():
+        lstChildren=dictJson['children']
+        for child in lstChildren:
+            strChildId=lookUpJSonObject(child,dictFatherId,lstAppearId,indexComment,offsetComment)
+            dictFatherId[strChildId]=strId
+    return strId
+
+def lookUpJSonObjectStep2(dictJson, lstAddToGraph,dictIdsAddToWholeGraph,time,graph):
+    strId=dictJson['id']
+    itemNode={}
+    if 'type' in dictJson.keys():
+
+        if strId in lstAddToGraph:
+            # print('go here')
+            strType=dictJson['type'].strip()
+            if strType not in dictIdsAddToWholeGraph.keys():
+                if 'isRootNode' in dictJson.keys():
+                    itemNode={'id': strType, 'type': 'program', 'attr': dictJson['statementType']}
+                else:
+                    itemNode = {'id': strType, 'type': 'ast', 'attr': 'ast'}
+                # print('strType {}'.format(strType))
+                dictIdsAddToWholeGraph[strType] = itemNode
+            else:
+                itemNode=dictIdsAddToWholeGraph[strType]
 
 
-    numId=-1
-    lenProgramRoot=100000
-    lstPR=[]
-    lstPRStr=[]
-    for i in range(0,lenProgramRoot):
-        numId=numId+1
-        lstPR.append(numId)
-        indexYear = random.randint(0, len(lstYears) - 1)
-        year=lstYears[indexYear]
-        lstPRStr.append('{}\t{}'.format(numId,year))
+    if 'children' in dictJson.keys():
+        lstChildren=dictJson['children']
+        for child in lstChildren:
+            childNode=lookUpJSonObjectStep2(child,lstAddToGraph,dictIdsAddToWholeGraph,time,graph)
+            # print('child {}'.format(childNode))
+            if str(childNode)!='{}':
+                graph.add_edge(itemNode,childNode,time=time, relation_type='ast_edge')
+    if 'nlGraph' in dictJson.keys():
+        dictNL=dictJson['nlGraph']
+        dictNL['label']='nlGraph'
+        nlNode=addNLNodeToGraph(dictNL,lstAddToGraph,dictIdsAddToWholeGraph,time,graph)
+        graph.add_edge(itemNode, nlNode,time=time, relation_type='ast_nl_edge')
+    return itemNode
 
-    lenProgramElement = 10000
-    lstPE=[]
-    lstPEStr=[]
-    numId=-1
-    for i in range(0,lenProgramElement):
-        numId=numId+1
-        lstPE.append(numId)
-        indexYear = random.randint(0, len(lstYears) - 1)
-        year=lstYears[indexYear]
-        lstPEStr.append('{}\t{}'.format(numId,year))
+def addNLNodeToGraph(dictNL, lstAddToGraph, dictIdsAddToWholeGraph,time, graph):
+    strLabel = dictNL['label'].strip()
+    itemNode = {'id': strLabel, 'type': 'nl_nonterminal', 'attr': 'nl'}
+    dictIdsAddToWholeGraph[strLabel] = itemNode
 
-    lenNLRoot = 100000
-    lstNLR=[]
-    lstNLRStr=[]
-    numId=-1
-    for i in range(0,lenNLRoot):
-        numId=numId+1
-        lstNLR.append(numId)
-        indexYear = random.randint(0, len(lstYears) - 1)
-        year = lstYears[indexYear]
-        lstNLRStr.append('{}\t{}'.format(numId, year))
-
-    lenNLElement = 20000
-    lstNLE = []
-    lstNLEStr=[]
-    numId=-1
-    for i in range(0, lenNLElement):
-        numId = numId + 1
-        lstNLE.append(numId)
-        indexYear = random.randint(0, len(lstYears) - 1)
-        year = lstYears[indexYear]
-        lstNLEStr.append('{}\t{}'.format(numId, year))
-    f1=open(fpProgramRoot,'w')
-    f1.write('\n'.join(lstPRStr))
-    f1.close()
-    f1 = open(fpProgramElement, 'w')
-    f1.write('\n'.join(lstPEStr))
-    f1.close()
-    f1=open(fpNLRoot,'w')
-    f1.write('\n'.join(lstNLRStr))
-    f1.close()
-    f1 = open(fpNLElement, 'w')
-    f1.write('\n'.join(lstNLEStr))
-    f1.close()
-
-    lenEdge=10
-    lstEdgesAdd=[]
-    for i in range(0,lenProgramRoot):
-        sourceNode=lstPR[i]
-        randEdgeNum=random.randint(1,lenEdge)
-        dictEdges={}
-        for j in range(0,randEdgeNum):
-            indexTarget=random.randint(0,lenProgramElement-1)
-            indexYear=random.randint(0,len(lstYears)-1)
-            randTargetNode=lstPE[indexTarget]
-            # print('ind year {}'.format(indexYear))
-            randYear=lstYears[indexYear]
-            strKey='{} {}'.format(randTargetNode,randYear)
-            if strKey not in dictEdges.keys():
-                dictEdges[strKey]=1
-                strLine='{}\t{}\t{}\t{}'.format(lstRelations[0],sourceNode,randTargetNode,randYear)
-                lstEdgesAdd.append(strLine)
-    f1=open(fpEdgeList,'w')
-    f1.write('\n'.join(lstEdgesAdd)+'\n')
-    f1.close()
-
-    lenEdge = 100
-    lstEdgesAdd = []
-    for i in range(0, lenProgramElement):
-        sourceNode = lstPE[i]
-        randEdgeNum = random.randint(1, lenEdge)
-        dictEdges = {}
-        for j in range(0, randEdgeNum):
-            indexTarget = random.randint(0, lenProgramElement-1)
-            indexYear = random.randint(0, len(lstYears)-1)
-            randTargetNode = lstPE[indexTarget]
-            randYear = lstYears[indexYear]
-            strKey = '{} {}'.format(randTargetNode, randYear)
-            if strKey not in dictEdges.keys():
-                dictEdges[strKey] = 1
-                strLine = '{}\t{}\t{}\t{}'.format(lstRelations[3], sourceNode, randTargetNode, randYear)
-                lstEdgesAdd.append(strLine)
-    f1 = open(fpEdgeList, 'a')
-    f1.write('\n'.join(lstEdgesAdd) + '\n')
-    f1.close()
+    lstChildren = dictNL['children']
+    for i in range(0, len(lstChildren)):
+        childNode = addNLNodeToGraph(lstChildren[i],  lstAddToGraph, dictIdsAddToWholeGraph,time, graph)
+        graph.add_edge(itemNode, childNode, relation_type='nl_pos_edge',time=time)
 
 
-    lenEdge = 10
-    lstEdgesAdd = []
-    for i in range(0, lenNLRoot):
-        sourceNode = lstNLR[i]
-        randEdgeNum = random.randint(1, lenEdge)
-        dictEdges = {}
-        for j in range(0, randEdgeNum):
-            indexTarget = random.randint(0, lenNLElement-1)
-            indexYear = random.randint(0, len(lstYears)-1)
-            randTargetNode = lstNLE[indexTarget]
-            randYear = lstYears[indexYear]
-            strKey = '{} {}'.format(randTargetNode, randYear)
-            if strKey not in dictEdges.keys():
-                dictEdges[strKey] = 1
-                strLine = '{}\t{}\t{}\t{}'.format(lstRelations[1], sourceNode, randTargetNode, randYear)
-                lstEdgesAdd.append(strLine)
-    f1 = open(fpEdgeList, 'a')
-    f1.write('\n'.join(lstEdgesAdd) + '\n')
-    f1.close()
+    if 'dependencies' in dictNL.keys():
+        lstDeps = dictNL['dependencies']
+        for i in range(0, len(lstDeps)):
+            tup = lstDeps[i]
+            nodeSource =  {'id': tup[3], 'type': 'nl_terminal', 'attr': 'nl'}
+            dictIdsAddToWholeGraph[nodeSource['id']]=nodeSource
+            nodeTarget = {'id': tup[4], 'type': 'nl_terminal', 'attr': 'nl'}
+            dictIdsAddToWholeGraph[nodeTarget['id']] = nodeTarget
+            graph.add_edge(nodeSource, nodeTarget, relation_type='nl_dep_edge_{}'.format(tup[2]),time=time)
+    return itemNode
 
-    lenEdge = 100
-    lstEdgesAdd = []
-    for i in range(0, lenNLElement):
-        sourceNode = lstNLE[i]
-        randEdgeNum = random.randint(1, lenEdge)
-        dictEdges = {}
-        for j in range(0, randEdgeNum):
-            indexTarget = random.randint(0, lenNLElement-1)
-            indexYear = random.randint(0, len(lstYears)-1)
-            randTargetNode = lstNLE[indexTarget]
-            randYear = lstYears[indexYear]
-            strKey = '{} {}'.format(randTargetNode, randYear)
-            if strKey not in dictEdges.keys():
-                dictEdges[strKey] = 1
-                strLine = '{}\t{}\t{}\t{}'.format(lstRelations[4], sourceNode, randTargetNode, randYear)
-                lstEdgesAdd.append(strLine)
-    f1 = open(fpEdgeList, 'a')
-    f1.write('\n'.join(lstEdgesAdd) + '\n')
-    f1.close()
-
-    lenEdge = 2
-    lstEdgesAdd = []
-    for i in range(0, lenProgramRoot):
-        sourceNode = lstPR[i]
-        randEdgeNum = random.randint(1, lenEdge)
-        dictEdges = {}
-        for j in range(0, randEdgeNum):
-            indexTarget = random.randint(0, lenNLRoot-1)
-            indexYear = random.randint(0, len(lstYears)-1)
-            randTargetNode = lstNLR[indexTarget]
-            randYear = lstYears[indexYear]
-            strKey = '{} {}'.format(randTargetNode, randYear)
-            if strKey not in dictEdges.keys():
-                dictEdges[strKey] = 1
-                strLine = '{}\t{}\t{}\t{}'.format(lstRelations[2], sourceNode, randTargetNode, randYear)
-                lstEdgesAdd.append(strLine)
-    f1 = open(fpEdgeList, 'a')
-    f1.write('\n'.join(lstEdgesAdd) + '\n')
-    f1.close()
-
-    lstLabels = []
-    for i in range(0, lenNLRoot):
-        sourceNode = lstPR[i]
-        indexRanPE = random.randint(0, 1)
-        ranPE=lstPE[indexRanPE]
-        lstLabels.append(ranPE)
-
-    f1=open(fpLabelList,'w')
-    f1.write('\n'.join(map(str,lstLabels)))
-    f1.close()
-    return lstPR,lstPE,lstNLR,lstNLE,lstLabels
 
 
 
@@ -211,12 +137,12 @@ parser = argparse.ArgumentParser(description='Preprocess ogbn-mag graph')
 '''
     Dataset arguments
 '''
-parser.add_argument('--output_dir', type=str, default='dataset_random/OGB_MAG_spoc_v2.pk',
+parser.add_argument('--output_dir', type=str, default='dataset_random/OGB_MAG_spoc_v3.pk',
                     help='The address to output the preprocessed graph.')
 
 args = parser.parse_args()
 
-fopRandomDataset='dataset_random/'
+fopRandomDataset='dataset_spoc/'
 lstPR,lstPE,lstNLR,lstNLE,lstLabels=generateRandomDataset(fopRandomDataset)
 print('finish random ds generation')
 fpProgramRoot = fopRandomDataset + 'ProgramRoot.txt'
