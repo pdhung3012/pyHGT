@@ -69,8 +69,16 @@ def generateSPOCDataset(fopDataset):
     arrLabels=f1.read().strip().split('\n')
     f1.close()
 
+    dictLabels={}
     for item in arrLabels:
-        lstLabels.append(int(item))
+        id=int(item)
+        newId=0
+        if id not in dictLabels.keys():
+            newId=len(dictLabels.keys())
+            dictLabels[id]=newId
+        else:
+            newId=dictLabels[id]
+        lstLabels.append(newId)
 
     return lstPR,lstPE,lstNLR,lstNLE,lstLabels
 
