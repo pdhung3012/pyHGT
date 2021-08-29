@@ -9,125 +9,70 @@ import sys,os
 sys.path.append(os.path.abspath(os.path.join('..')))
 sys.path.append(os.path.abspath(os.path.join('../../')))
 
-lstRelations = ['isProgramOf', 'isNLRootOf', 'isProgramOfNLRoot', 'isPLFatherOf', 'isNLFatherOf']
-lstYears = [2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020]
+lstRelations = ['isProgramOf', 'isNLRootOf', 'isProgramOfNLRoot', 'isPLFatherOfPL', 'isPLFatherOfNLRoot','isNLFatherOfNL']
+# lstYears = [2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020]
 dictSourceTargetType = {}
 dictSourceTargetType['isProgramOf'] = ('ProgramRoot', 'ProgramElement')
 dictSourceTargetType['isNLRootOf'] = ('NLRoot', 'NLElement')
 dictSourceTargetType['isProgramOfNLRoot'] = ('ProgramRoot', 'NLRoot')
-dictSourceTargetType['isPLFatherOf'] = ('ProgramElement', 'ProgramElement')
-dictSourceTargetType['isNLFatherOf'] = ('NLElement', 'NLElement')
-
-fopRootData='../../dataPapers/textInSPOC/mixCode_v2/'
-fopStep2=fopRootData+'step2/'
-fopStep3=fopRootData+'step3_treesitter/'
-fopStep5=fopRootData+'step5/'
-fopStep6=fopRootData+'step6/'
-createDirIfNotExist(fopStep6)
-fopProgramTrain=fopStep2+'train/'
-fopProgramTestP=fopStep2+'testP/'
-fopProgramTestW=fopStep2+'testW/'
-fopStep3Train=fopStep3+'train/'
-fopStep3TestP=fopStep3+'testP/'
-fopStep3TestW=fopStep3+'testW/'
-
-fpStep5Train=fopStep5+'train'+'_label.txt'
-fpStep5TestP=fopStep5+'testP'+'_label.txt'
-fpStep5TestW=fopStep5+'testW'+'_label.txt'
-
-fpStep6TextTrain=fopStep6+'train.text.txt'
-fpStep6ASTTrain=fopStep6+'train.ast.txt'
-fpStep6LabelTrain=fopStep6+'train.label.txt'
-fpStep6TextTestP=fopStep6+'testP.text.txt'
-fpStep6ASTTestP=fopStep6+'testP.ast.txt'
-fpStep6LabelTestP=fopStep6+'testP.label.txt'
-fpStep6TextTestW=fopStep6+'testW.text.txt'
-fpStep6ASTTestW=fopStep6+'testW.ast.txt'
-fpStep6LabelTestW=fopStep6+'testW.label.txt'
-fpStep6OutEmbedded=fopStep6+'spoc.emb.txt'
-fpStep6OutModel=fopStep6+'spoc.d2v.model'
-
-parser = argparse.ArgumentParser(description='Preprocess OAG (CS/Med/All) Data')
-
-offsetComment=3
-
-def lookUpJSonObject(dictJson,dictFatherId,lstAppearId,indexComment,offsetComment):
-    strId=dictJson['id']
-    if 'type' in dictJson.keys():
-        startLine=dictJson['startLine']
-        endLine = dictJson['endLine']
-
-        if startLine>=(indexComment-offsetComment) and endLine<=(indexComment+offsetComment):
-            # print('id {}'.format(strId))
-            strType=dictJson['type'].strip()
-            lstAppearId.append(strId)
-
-    if 'children' in dictJson.keys():
-        lstChildren=dictJson['children']
-        for child in lstChildren:
-            strChildId=lookUpJSonObject(child,dictFatherId,lstAppearId,indexComment,offsetComment)
-            dictFatherId[strChildId]=strId
-    return strId
-
-def lookUpJSonObjectStep2(dictJson, lstAddToGraph,dictIdsAddToWholeGraph,time,graph):
-    strId=dictJson['id']
-    itemNode={}
-    if 'type' in dictJson.keys():
-
-        if strId in lstAddToGraph:
-            # print('go here')
-            strType=dictJson['type'].strip()
-            if strType not in dictIdsAddToWholeGraph.keys():
-                if 'isRootNode' in dictJson.keys():
-                    itemNode={'id': strType, 'type': 'program', 'attr': dictJson['statementType']}
-                else:
-                    itemNode = {'id': strType, 'type': 'ast', 'attr': 'ast'}
-                # print('strType {}'.format(strType))
-                dictIdsAddToWholeGraph[strType] = itemNode
-            else:
-                itemNode=dictIdsAddToWholeGraph[strType]
+dictSourceTargetType['isPLFatherOfPL'] = ('ProgramElement', 'ProgramElement')
+dictSourceTargetType['isPLFatherOfNLRoot'] = ('ProgramElement', 'NLRoot')
+dictSourceTargetType['isNLFatherOfNL'] = ('NLElement', 'NLElement')
 
 
-    if 'children' in dictJson.keys():
-        lstChildren=dictJson['children']
-        for child in lstChildren:
-            childNode=lookUpJSonObjectStep2(child,lstAddToGraph,dictIdsAddToWholeGraph,time,graph)
-            # print('child {}'.format(childNode))
-            if str(childNode)!='{}':
-                graph.add_edge(itemNode,childNode,time=time, relation_type='ast_edge')
-    if 'nlGraph' in dictJson.keys():
-        dictNL=dictJson['nlGraph']
-        dictNL['label']='nlGraph'
-        nlNode=addNLNodeToGraph(dictNL,lstAddToGraph,dictIdsAddToWholeGraph,time,graph)
-        graph.add_edge(itemNode, nlNode,time=time, relation_type='ast_nl_edge')
-    return itemNode
-
-def addNLNodeToGraph(dictNL, lstAddToGraph, dictIdsAddToWholeGraph,time, graph):
-    strLabel = dictNL['label'].strip()
-    itemNode = {'id': strLabel, 'type': 'nl_nonterminal', 'attr': 'nl'}
-    dictIdsAddToWholeGraph[strLabel] = itemNode
-
-    lstChildren = dictNL['children']
-    for i in range(0, len(lstChildren)):
-        childNode = addNLNodeToGraph(lstChildren[i],  lstAddToGraph, dictIdsAddToWholeGraph,time, graph)
-        graph.add_edge(itemNode, childNode, relation_type='nl_pos_edge',time=time)
+def generateSPOCDataset(fopDataset):
+    # generate ds for ProgramRoot
+    createDirIfNotExist(fopDataset)
+    fpProgramRoot=fopDataset+'ProgramRoot_raw.txt'
+    fpProgramElement = fopDataset + 'ProgramElement_raw.txt'
+    fpNLRoot = fopDataset + 'NLRoot_raw.txt'
+    fpNLElement = fopDataset + 'NLElement_raw.txt'
+    fpEdgeList = fopDataset + 'edgeLists_id.txt'
+    fpLabelList = fopDataset + 'labels_id.txt'
 
 
-    if 'dependencies' in dictNL.keys():
-        lstDeps = dictNL['dependencies']
-        for i in range(0, len(lstDeps)):
-            tup = lstDeps[i]
-            nodeSource =  {'id': tup[3], 'type': 'nl_terminal', 'attr': 'nl'}
-            dictIdsAddToWholeGraph[nodeSource['id']]=nodeSource
-            nodeTarget = {'id': tup[4], 'type': 'nl_terminal', 'attr': 'nl'}
-            dictIdsAddToWholeGraph[nodeTarget['id']] = nodeTarget
-            graph.add_edge(nodeSource, nodeTarget, relation_type='nl_dep_edge_{}'.format(tup[2]),time=time)
-    return itemNode
+    numId=-1
+    lstPR=[]
+    f1=open(fpProgramRoot,'r')
+    arrPRs=f1.read().strip().split('\n')
+    f1.close()
+
+    for i in range(0,len(arrPRs)):
+        lstPR.append(i)
+
+    lstPE=[]
+    f1 = open(fpProgramElement, 'r')
+    arrPEs = f1.read().strip().split('\n')
+    f1.close()
+
+    for i in range(0, len(arrPEs)):
+        lstPE.append(i)
 
 
+    lstNLR=[]
+    f1 = open(fpNLRoot, 'r')
+    arrNLRs = f1.read().strip().split('\n')
+    f1.close()
+    for i in range(0, len(arrNLRs)):
+        lstNLR.append(i)
+
+    lstNLE = []
+    f1 = open(fpNLElement, 'r')
+    arrNLEs = f1.read().strip().split('\n')
+    f1.close()
+    for i in range(0, len(arrNLEs)):
+        lstNLE.append(i)
 
 
+    lstLabels = []
+    f1=open(fpLabelList,'r')
+    arrLabels=f1.read().strip().split('\n')
+    f1.close()
 
+    for item in arrLabels:
+        lstLabels.append(int(item))
+
+    return lstPR,lstPE,lstNLR,lstNLE,lstLabels
 
 
 import argparse
@@ -137,20 +82,20 @@ parser = argparse.ArgumentParser(description='Preprocess ogbn-mag graph')
 '''
     Dataset arguments
 '''
-parser.add_argument('--output_dir', type=str, default='dataset_random/OGB_MAG_spoc_v3.pk',
+parser.add_argument('--output_dir', type=str, default='dataset_spoc/spoc.pk',
                     help='The address to output the preprocessed graph.')
 
 args = parser.parse_args()
 
 fopRandomDataset='dataset_spoc/'
-lstPR,lstPE,lstNLR,lstNLE,lstLabels=generateRandomDataset(fopRandomDataset)
+lstPR,lstPE,lstNLR,lstNLE,lstLabels=generateSPOCDataset(fopRandomDataset)
 print('finish random ds generation')
-fpProgramRoot = fopRandomDataset + 'ProgramRoot.txt'
-fpProgramElement = fopRandomDataset + 'ProgramElement.txt'
-fpNLRoot = fopRandomDataset + 'NLRoot.txt'
-fpNLElement = fopRandomDataset + 'NLElement.txt'
-fpEdgeList = fopRandomDataset + 'edgeLists.txt'
-fpLabelList = fopRandomDataset + 'labelLists.txt'
+fpProgramRoot = fopRandomDataset + 'ProgramRoot_raw.txt'
+fpProgramElement = fopRandomDataset + 'ProgramElement_raw.txt'
+fpNLRoot = fopRandomDataset + 'NLRoot_raw.txt'
+fpNLElement = fopRandomDataset + 'NLElement_raw.txt'
+fpEdgeList = fopRandomDataset + 'edgeLists_id.txt'
+fpLabelList = fopRandomDataset + 'labels_id.txt'
 
 
 dataset = PygNodePropPredDataset(name='ogbn-mag')
@@ -160,14 +105,12 @@ edge_index_dict = data.edge_index_dict
 graph = Graph()
 edg   = graph.edge_list
 # print('datta object {}'.format(data))
-f1=open(fpProgramRoot,'r')
-arrPRs=f1.read().split('\n')
+f1=open(fpNLRoot,'r')
+arrNLRs=f1.read().split('\n')
 f1.close()
 lstYear1=[]
-for item in arrPRs:
-    arrTabs=item.split('\t')
-    if len(arrTabs)>=2:
-        lstYear1.append(int(arrTabs[1]))
+for i in range(0,len(arrNLRs)):
+    lstYear1.append(i)
 years=np.asarray(lstYear1)
 # years = data.node_year['paper'].t().numpy()[0]
 # print('year 1 {} {}'.format(len(years),years))
@@ -345,9 +288,9 @@ split_idx = dataset.get_idx_split()
 # test_paper  = split_idx['test']['paper'].numpy()
 # print('type train_paper {} {}'.format(valid_paper[10],type(train_paper)))
 
-train_paper = np.asarray(lstPR[:80000])
-valid_paper = np.asarray(lstPR[80000:90000])
-test_paper  = np.asarray(lstPR[90000:])
+train_paper = np.asarray(lstNLR[:115749])
+valid_paper = np.asarray(lstNLR[115749:136624])
+test_paper  = np.asarray(lstNLR[136624:])
 
 
 graph.y = y
