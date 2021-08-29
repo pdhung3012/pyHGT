@@ -79,6 +79,14 @@ def generateSPOCDataset(fopDataset):
         else:
             newId=dictLabels[id]
         lstLabels.append(newId)
+    f1 = open('spoc_yLbl.txt', 'w')
+    f1.write('\n'.join(map(str, lstLabels)))
+    f1.close()
+    list_set = set(lstLabels)
+    unique_list = (list(list_set))
+    f1 = open('spoc_yLbl_unique.txt', 'w')
+    f1.write('\n'.join(map(str, unique_list)))
+    f1.close()
 
     return lstPR,lstPE,lstNLR,lstNLE,lstLabels
 
@@ -97,7 +105,7 @@ args = parser.parse_args()
 
 fopRandomDataset='dataset_spoc/'
 lstPR,lstPE,lstNLR,lstNLE,lstLabels=generateSPOCDataset(fopRandomDataset)
-print('finish random ds generation')
+print('finish spoc ds generation')
 fpProgramRoot = fopRandomDataset + 'ProgramRoot_raw.txt'
 fpProgramElement = fopRandomDataset + 'ProgramElement_raw.txt'
 fpNLRoot = fopRandomDataset + 'NLRoot_raw.txt'
@@ -118,7 +126,7 @@ arrNLRs=f1.read().split('\n')
 f1.close()
 lstYear1=[]
 for i in range(0,len(arrNLRs)):
-    lstYear1.append(i)
+    lstYear1.append(2020)
 years=np.asarray(lstYear1)
 # years = data.node_year['paper'].t().numpy()[0]
 # print('year 1 {} {}'.format(len(years),years))
@@ -177,7 +185,8 @@ for line in arrEdges:
         rlist = edg[s_type][t_type]['rev_' + r_type]
         s_id=int(arrTabsItem[1])
         t_id=int(arrTabsItem[2])
-        year=int(arrTabsItem[3])
+        # year=int(arrTabsItem[3])
+        year=2020
         elist[t_id][s_id]=year
         rlist[s_id][t_id]=year
 

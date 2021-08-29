@@ -112,6 +112,11 @@ gnn = GNN(conv_name = args.conv_name, in_dim = len(graph.node_feature['NLRoot'][
           n_hid = args.n_hid, n_heads = args.n_heads, n_layers = args.n_layers, dropout = args.dropout,\
           num_types = len(graph.get_types()), num_relations = len(graph.get_meta_graph()) + 1,\
           prev_norm = args.prev_norm, last_norm = args.last_norm, use_RTE = args.use_RTE)
+# print('num of classes {}'.format((graph.y.max()+1)))
+# print('num of types {}'.format((len(graph.get_types()))))
+# print('num of relations {}'.format((graph.get_meta_graph()) ))
+#
+# input('aaa ')
 classifier = Classifier(args.n_hid, graph.y.max()+1)
 
 model = nn.Sequential(gnn, classifier).to(device)

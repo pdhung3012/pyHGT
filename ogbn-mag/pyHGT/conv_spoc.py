@@ -89,6 +89,7 @@ class HGTConv(MessagePassing):
                     target_node_vec = node_inp_i[idx]
                     source_node_vec = node_inp_j[idx]
                     if self.use_RTE:
+                        # print('time {} {}\n{}'.format(idx,type(edge_time[idx]),edge_time[idx]))
                         source_node_vec = self.emb(source_node_vec, edge_time[idx])
                     '''
                         Step 1: Heterogeneous Mutual Attention

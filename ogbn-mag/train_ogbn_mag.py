@@ -43,7 +43,7 @@ parser.add_argument('--dropout', type=float, default=0.2,
                     help='Dropout ratio')
 parser.add_argument('--sample_depth', type=int, default=6,
                     help='How many numbers to sample the graph')
-parser.add_argument('--sample_width', type=int, default=130,
+parser.add_argument('--sample_width', type=int, default=120,
                     help='How many nodes to be sampled per layer per type')
 
 parser.add_argument('--n_epoch', type=int, default=100,

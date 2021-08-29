@@ -16,7 +16,7 @@ parser = argparse.ArgumentParser(description='Preprocess ogbn-mag graph')
 '''
     Dataset arguments
 '''
-parser.add_argument('--output_dir', type=str, default='dataset/OGB_MAG.pk',
+parser.add_argument('--output_dir', type=str, default='dataset/OGB_MAG_justify.pk',
                     help='The address to output the preprocessed graph.')
 
 args = parser.parse_args()
@@ -30,6 +30,20 @@ graph = Graph()
 edg   = graph.edge_list
 print('datta object {}'.format(data))
 years = data.node_year['paper'].t().numpy()[0]
+yLbl = data.y_dict['paper'].t().numpy()[0]
+print('yLbl {}'.format(type(yLbl)))
+yLbl.sort(axis=0)
+print('sorted {}'.format(yLbl))
+f1=open('yLbl.txt','w')
+f1.write('\n'.join(map(str,yLbl.tolist())))
+f1.close()
+list_set = set(yLbl.tolist())
+# convert the set to the list
+unique_list = (list(list_set))
+f1=open('yLbl_unique.txt','w')
+f1.write('\n'.join(map(str,unique_list)))
+f1.close()
+# input('ylbl ')
 
 graph = Graph()
 edg   = graph.edge_list
