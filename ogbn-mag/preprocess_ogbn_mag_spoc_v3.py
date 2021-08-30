@@ -1,3 +1,5 @@
+import numpy as np
+
 from pyHGT.data_spoc import *
 from pyHGT.utils_spoc import *
 from ogb.nodeproppred import PygNodePropPredDataset
@@ -112,7 +114,8 @@ fpNLRoot = fopRandomDataset + 'NLRoot_raw.txt'
 fpNLElement = fopRandomDataset + 'NLElement_raw.txt'
 fpEdgeList = fopRandomDataset + 'edgeLists_id.txt'
 fpLabelList = fopRandomDataset + 'labels_id.txt'
-
+fpLabelRaw = fopRandomDataset + 'labels_raw.txt'
+fpEmbeddedModel=fopRandomDataset+'spoc.emb.txt'
 
 dataset = PygNodePropPredDataset(name='ogbn-mag')
 data = dataset[0]
@@ -245,13 +248,91 @@ graph.edge_list = edg
 # cv = data.x_dict['paper'].numpy()
 # print('cv dddd {}'.format(cv.shape))
 # input('cv ')
-cv=torch.zeros(len(lstPR),128)
+
+dictVectors={}
+f1=open(fpEmbeddedModel,'r')
+arrVectors=f1.read().strip().split('\n')
+f1.close()
+
+lenVector=0
+for i in range(0,len(arrVectors)):
+    arrTabs=arrVectors[i].strip().split('\t')
+    if len(arrTabs)>=2:
+        dictVectors[arrTabs[0]]=[float(item) for item in arrTabs[1].split()]
+        if lenVector==0:
+            lenVector=len(dictVectors[arrTabs[0]])
+
+print('len vector {}'.format(lenVector))
+#input('len ')
+
+f1=open(fpLabelRaw,'r')
+arrLines=f1.read().strip().split('\n')
+f1.close()
+#cv=np.empty((0, lenVector), float)
+#cv2=np.empty((0, lenVector), float)
+lstCvs=[]
+lstCvs2=[]
+dictNLRootKey=[]
+for i in range(0,len(arrLines)):
+    arrTabs=arrLines[i].split('\t')
+    strKey=arrTabs[0]
+    if strKey in dictVectors.keys():
+       # print('item {}'.format(dictVectors[strKey]))
+        lstCvs.append(dictVectors[strKey])
+        strNLRoot='NLRoot_'+str(i+1)
+        dictNLRootKey[strNLRoot]=dictVectors[strKey]
+       # lstCvs2.append(dictVectors[strKey])
+    else:
+        lstCvs.append(np.zeros(lenVector).tolist())
+        #lstCvs2.append(np.zeros(lenVector).tolist())
+
+f1=open(fpNLRoot,'r')
+arrNLRs=f1.read().strip().split('\n')
+f1.close()
+lstCvs2=[]
+for i in range(0,len(arrNLRs)):
+    strKey=arrNLRs[i]
+    if strKey in dictNLRootKey.keys():
+        lstCvs2.append(dictNLRootKey[strKey])
+    else:
+        lstCvs2.append(np.zeros(lenVector).tolist())
+
+cv=np.array(lstCvs)
+cv2=np.array(lstCvs2)
+print('shape {} {}'.format(len(lstNLR),cv2.shape))
+#cv=torch.zeros(len(lstPR),128)
 graph.node_feature['ProgramRoot'] = np.concatenate((cv, np.log10(deg['ProgramRoot'].reshape(-1, 1))), axis=-1)
-cv=torch.zeros(len(lstPE),128)
+graph.node_feature['NLRoot'] =np.concatenate((cv2, np.log10(deg['NLRoot'].reshape(-1, 1))), axis=-1)
+#cv=torch.zeros(len(lstPE),128)
+
+#cv=np.empty((0, lenVector), float)
+f1=open(fpProgramElement,'r')
+arrStrPEs=f1.read().strip().split('\n')
+f1.close()
+lstCvs=[]
+for i in range(0,len(arrStrPEs)):
+    strKey=arrStrPEs[i]
+    if strKey in dictVectors.keys():
+        lstCvs.append(dictVectors[strKey])
+    else:
+        lstCvs.append(np.zeros(lenVector).tolist())
+cv=np.array(lstCvs)
 graph.node_feature['ProgramElement'] = np.concatenate((cv, np.log10(deg['ProgramElement'].reshape(-1, 1))), axis=-1)
-cv=torch.zeros(len(lstNLR),128)
-graph.node_feature['NLRoot'] = np.concatenate((cv, np.log10(deg['NLRoot'].reshape(-1, 1))), axis=-1)
-cv=torch.zeros(len(lstNLE),128)
+#cv=torch.zeros(len(lstNLR),128)
+
+#cv=torch.zeros(len(lstNLE),128)
+cv=np.empty((0, lenVector), float)
+f1=open(fpNLElement,'r')
+arrStrNLEs=f1.read().strip().split('\n')
+f1.close()
+lstCvs=[]
+for i in range(0,len(arrStrNLEs)):
+    strKey=arrStrNLEs[i]
+    if strKey in dictVectors.keys():
+        lstCvs.append(dictVectors[strKey])
+    else:
+        lstCvs.append(np.zeros(lenVector).tolist())
+cv = np.array(lstCvs)
 graph.node_feature['NLElement'] = np.concatenate((cv, np.log10(deg['NLElement'].reshape(-1, 1))), axis=-1)
 # for _type in data.num_nodes:
 #     if _type not in ['paper', 'institution']:
