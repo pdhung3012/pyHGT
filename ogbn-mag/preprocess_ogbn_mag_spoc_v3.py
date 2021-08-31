@@ -272,7 +272,7 @@ f1.close()
 #cv2=np.empty((0, lenVector), float)
 lstCvs=[]
 lstCvs2=[]
-dictNLRootKey=[]
+dictNLRootKey= {}
 for i in range(0,len(arrLines)):
     arrTabs=arrLines[i].split('\t')
     strKey=arrTabs[0]
