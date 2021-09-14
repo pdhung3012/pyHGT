@@ -59,7 +59,7 @@ parser.add_argument('--clip', type=float, default=1.0,
 
 parser.add_argument('--prev_norm', help='Whether to add layer-norm on the previous layers', action='store_true')
 parser.add_argument('--last_norm', help='Whether to add layer-norm on the last layers',     action='store_true')
-parser.add_argument('--use_RTE',   help='Whether to use RTE',     action='store_true')
+parser.add_argument('--use_RTE',   help='Whether to use RTE', default=1,     action='store_true')
 
 args = parser.parse_args()
 args_print(args)

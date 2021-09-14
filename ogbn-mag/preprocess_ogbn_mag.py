@@ -16,7 +16,7 @@ parser = argparse.ArgumentParser(description='Preprocess ogbn-mag graph')
 '''
     Dataset arguments
 '''
-parser.add_argument('--output_dir', type=str, default='dataset/OGB_MAG_justify.pk',
+parser.add_argument('--output_dir', type=str, default='dataset/OGB_MAG.pk',
                     help='The address to output the preprocessed graph.')
 
 args = parser.parse_args()
