@@ -6,7 +6,7 @@ from sklearn.metrics import f1_score
 from pyHGT.data_spoc import *
 from pyHGT.model_spoc import *
 from warnings import filterwarnings
-filterwarnings("ignore")
+# filterwarnings("ignore")
 
 import torch
 import torch.nn.functional as F
