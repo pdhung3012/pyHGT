@@ -53,7 +53,7 @@ You can also use our code to process other heterogeneous graph, as long as you l
 Execute the following scripts to train on paper-field (L2) classification task using HGT:
 
 ```bash
-python3 train_paper_field.py --data_dir PATH_OF_DATASET --model_dir PATH_OF_SAVED_MODEL --conv_name hgt
+python3 train_paper_field_RTX3090.py --data_dir PATH_OF_DATASET --model_dir PATH_OF_SAVED_MODEL --conv_name hgt
 ```
 Conducting other two tasks are similar.
 There are some key options of this scrips:
