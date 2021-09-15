@@ -24,7 +24,7 @@ parser = argparse.ArgumentParser(description='Training GNN on ogbn-mag benchmark
 
 
 
-parser.add_argument('--data_dir', type=str, default='dataset/OGB_MAG.pk',
+parser.add_argument('--data_dir', type=str, default='dataset_v1/OGB_MAG.pk',
                     help='The address of preprocessed graph.')
 parser.add_argument('--model_dir', type=str, default='./hgt_4layer',
                     help='The address for storing the trained models.')

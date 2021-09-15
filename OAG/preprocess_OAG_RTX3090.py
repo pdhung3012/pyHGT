@@ -1,6 +1,7 @@
 import argparse
+import glob
 
-from transformers import *
+from transformers import XLNetTokenizer,XLNetModel
 
 from pyHGT.data import *
 fopParent='../../dataPapers/'
@@ -87,24 +88,76 @@ model = XLNetModel.from_pretrained('xlnet-base-cased',
                                    output_hidden_states=True,
                                    output_attentions=True).to(device)
 
-with open(filename) as fin:
-    fin.readline()
-    for line in tqdm(fin, total=line_count):
-        try:
-            tokens = line.split('\t')
-            paper_id = tokens[0]
-            if paper_id in paper_nodes:
+fopPaperNodeEmb = f'{args.input_dir}/cachedEmb/'
+fnPrefix='batch'
+isCachedPaperNode=False
+from UtilFunctions_RTX3090 import createDirIfNotExist
+if not os.path.isdir(fopPaperNodeEmb):
+    # f1=open(fpPaperNodeEmb,'w')
+    # f1.write('')
+    # f1.close()
+    createDirIfNotExist(fopPaperNodeEmb)
+    isCachedPaperNode=True
+
+    idxLine=0
+    lstCachedEmb=[]
+    idxBatch=0
+    with open(filename) as fin:
+        fin.readline()
+        idxL1 = 0
+        for line in tqdm(fin, total=line_count):
+            idxL1=idxL1+1
+            try:
+                tokens = line.split('\t')
+                paper_id = tokens[0]
+                if paper_id in paper_nodes:
+                    paper_node = paper_nodes[paper_id]
+
+                    input_ids = torch.tensor([tokenizer.encode(paper_node['title'])]).to(device)[:, :64]
+                    if len(input_ids[0]) < 4:
+                        continue
+                    all_hidden_states, all_attentions = model(input_ids)[-2:]
+                    rep = (all_hidden_states[-2][0] * all_attentions[-2][0].mean(dim=0).mean(dim=0).view(-1, 1)).sum(dim=0)
+
+                    paper_node['emb'] = rep.tolist()
+
+                    # print('type pp {} {}'.format(type(paper_id),len(paper_node['emb'])))
+                    # print('rep {} {}'.format(rep.tolist()[0],type(rep.tolist()[0])))
+                    idxLine=idxLine+1
+                    strAddLine = '{}\t{}'.format(paper_id, ','.join(map(str, paper_node['emb'])))
+                    lstCachedEmb.append(strAddLine)
+                    if idxLine%10000==0:
+                        if isCachedPaperNode and len(lstCachedEmb)>0:
+                            idxBatch=idxBatch+1
+                            fpPaperNodeEmb='{}{}_{}.txt'.format(fopPaperNodeEmb,fnPrefix,idxBatch)
+                            f1=open(fpPaperNodeEmb,'a')
+                            f1.write('\n'.join(lstCachedEmb))
+                            f1.close()
+                        lstCachedEmb=[]
+                        # print('break')
+                        # break
+
+            except Exception as e:
+                print(e)
+        if idxL1==line_count and isCachedPaperNode and len(lstCachedEmb) > 0:
+            idxBatch = idxBatch + 1
+            fpPaperNodeEmb = '{}{}_{}.txt'.format(fopPaperNodeEmb, fnPrefix, idxBatch)
+            f1 = open(fpPaperNodeEmb, 'a')
+            f1.write('\n'.join(lstCachedEmb))
+            f1.close()
+else:
+    lstFilesBatches=sorted(glob.glob(fopPaperNodeEmb+'*.txt'))
+    for fpItem in lstFilesBatches:
+        f1=open(fpItem,'r')
+        arrItems=f1.read().strip().split('\n')
+        for item in arrItems:
+            arrTabs=item.split('\t')
+            if len(arrTabs)>=2:
+                paper_id=arrTabs[0]
                 paper_node = paper_nodes[paper_id]
-
-                input_ids = torch.tensor([tokenizer.encode(paper_node['title'])]).to(device)[:, :64]
-                if len(input_ids[0]) < 4:
-                    continue
-                all_hidden_states, all_attentions = model(input_ids)[-2:]
-                rep = (all_hidden_states[-2][0] * all_attentions[-2][0].mean(dim=0).mean(dim=0).view(-1, 1)).sum(dim=0)
-
-                paper_node['emb'] = rep.tolist()
-        except Exception as e:
-            print(e)
+                lstVector=[float(x) for x in arrTabs[1].split(',')]
+                paper_node['emb']=lstVector
+                # print('id and value {}\t{}'.format(paper_id,lstVector))
 
 filename = 'vfi_vector.tsv'
 print(f'Reading Venue/Filed/Affiliation nodes from {filename}...')
