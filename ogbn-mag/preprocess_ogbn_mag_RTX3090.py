@@ -2,7 +2,7 @@ from pyHGT.data import *
 from pyHGT.utils import *
 from ogb.nodeproppred import PygNodePropPredDataset
 from ogb.nodeproppred import Evaluator
-from UtilFunctions import createDirIfNotExist
+from UtilFunctions_RTX3090 import createDirIfNotExist
 # from tree_sitter import Language, Parser
 import sys,os
 sys.path.append(os.path.abspath(os.path.join('..')))
