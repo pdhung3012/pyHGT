@@ -1,3 +1,6 @@
+
+import torch
+print('cuda status {}'.format( torch.cuda.is_available() ))
 import argparse
 from tqdm import tqdm
 import sys
@@ -8,7 +11,6 @@ from pyHGT.model import *
 from warnings import filterwarnings
 filterwarnings("ignore")
 
-import torch
 import torch.nn.functional as F
 from torch.nn import ModuleList, Linear, ParameterDict, Parameter
 from torch_geometric.utils import to_undirected
