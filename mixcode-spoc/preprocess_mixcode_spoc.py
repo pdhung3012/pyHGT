@@ -1,9 +1,10 @@
 import glob
+import traceback
 
 from pyHGT_SPoC.data import *
 from pyHGT_SPoC.utils import *
 from ogb.nodeproppred import PygNodePropPredDataset, Evaluator
-
+from UtilFunctions_RTX3090 import createDirIfNotExist
 import argparse
 
 strSplitCharacterForNodeEdge=' ABAZ '
@@ -24,14 +25,31 @@ args = parser.parse_args()
 fopInputMixGraph=args.input_mixgraph_dir
 fopInputEmbeddingModel=args.input_embedding_dir
 fpOutputGraph=args.output_dir
-problemId=0
+fopOutputGraph=os.path.dirname(fpOutputGraph)
+createDirIfNotExist(fopOutputGraph)
 
+problemId=0
+fopRoot='/home/hungphd/media/dataPapersExternal/mixCodeRaw/'
+fpDictLiterals=fopRoot+'step2_dictLiterals_all.txt'
 fpNodeProgramRoot=fopInputMixGraph+'nodes_ProgramRoot.txt'
 fpNodeASTNode = fopInputMixGraph + 'nodes_ASTNode.txt'
 fpNodeNLRoot = fopInputMixGraph + 'nodes_NLRoot.txt'
 fpNodeNLNode = fopInputMixGraph + 'nodes_NLNode.txt'
 
 lstFpEdgesList=glob.glob(fopInputMixGraph+'edges_*.txt')
+
+f1=open(fpDictLiterals,'r')
+arrLits=f1.read().strip().split('\n')
+f1.close()
+dictLiteralsToValues={}
+dictValuesToLiterals={}
+for item in arrLits:
+    arrTabs=item.split('\t')
+    if len(arrTabs)>=2:
+        strContent='\t'.join(arrTabs[1:])
+        dictLiteralsToValues[arrTabs[0]]=strContent
+        dictValuesToLiterals[strContent]=arrTabs[0]
+
 dictProgramRoots={}
 dictASTNodes={}
 dictNLRoots={}
@@ -49,7 +67,7 @@ for i in range(0,len(arrPRs)):
     item=arrPRs[i]
     arrItemContent=item.split(strSplitCharacterForNodeEdge)
     if len(arrItemContent)>=3:
-        id=len(dictProgramRoots.keys())+1
+        id=len(dictProgramRoots.keys())
         strTrainTest=arrItemContent[2].split('\t')[0]
         strLabel=arrItemContent[1].split('\t')[problemId]
         if strLabel not in dictLabelsTextToInt.keys():
@@ -57,12 +75,12 @@ for i in range(0,len(arrPRs)):
         idxLabel=dictLabelsTextToInt[strLabel]
         lstIdxLabels.append(idxLabel)
         tup = [id, arrItemContent[0],idxLabel]
-        dictProgramRoots[arrItemContent]=tup
+        dictProgramRoots[arrItemContent[0]]=tup
 
         if strTrainTest not in dictRangeTrainTest.keys():
             dictRangeTrainTest[strTrainTest]=[i,-1]
 
-        if prevTrainTest!=strTrainTest:
+        if prevTrainTest!='' and prevTrainTest!=strTrainTest:
             dictRangeTrainTest[prevTrainTest][1]=i-1
         if (i+1)==len(arrPRs):
             dictRangeTrainTest[strTrainTest][1]=i-1
@@ -77,7 +95,7 @@ for i in range(0,len(arrNLRs)):
     item=arrNLRs[i]
     arrItemContent=item.split(strSplitCharacterForNodeEdge)
     if len(arrItemContent)>=3:
-        id=len(dictNLRoots.keys())+1
+        id=len(dictNLRoots.keys())
         strTrainTest=arrItemContent[2].split('\t')[0]
         strLabel=arrItemContent[1].split('\t')[problemId]
         # if strLabel not in dictLabelsTextToInt.keys():
@@ -85,7 +103,7 @@ for i in range(0,len(arrNLRs)):
         idxLabel=dictLabelsTextToInt[strLabel]
         lstIdxLabels.append(idxLabel)
         tup = [id, arrItemContent[0],idxLabel]
-        dictNLRoots[arrItemContent]=tup
+        dictNLRoots[arrItemContent[0]]=tup
         lstYears.append(2020)
 years=np.asarray(lstYears)
 
@@ -95,8 +113,8 @@ f1.close()
 dictASTNodes={}
 for i in range(0,len(arrASTNodes)):
     item=arrASTNodes[i]
-    id=len(dictASTNodes.keys())+1
-    dictASTNodes[item]=id
+    id=len(dictASTNodes.keys())
+    dictASTNodes[item]=[id]
 
 f1=open(fpNodeNLNode,'r')
 arrNLNodes=f1.read().strip().split('\n')
@@ -104,8 +122,8 @@ f1.close()
 dictNLNodes={}
 for i in range(0,len(arrNLNodes)):
     item=arrNLNodes[i]
-    id=len(dictNLNodes.keys())+1
-    dictNLNodes[item]=id
+    id=len(dictNLNodes.keys())
+    dictNLNodes[item]=[id]
 
 dictAllNodes={}
 dictAllNodes['ProgramRoot']=dictProgramRoots
@@ -153,18 +171,42 @@ for i in range(0,len(lstFpEdgesList)):
     for line in arrEdges:
         arrTabsItem=line.split(strSplitCharacterForNodeEdge)
         if len(arrTabsItem)>=3:
-            s_type= strSourceType
-            t_type=strTargetType
-            r_type=strTypeForEdge
-            elist = edg[t_type][s_type][r_type]
-            rlist = edg[s_type][t_type]['rev_' + r_type]
-            s_id=dictAllNodes[s_type][arrTabsItem[0]]
-            t_id=dictAllNodes[s_type][arrTabsItem[0]]
-            # year=int(arrTabsItem[3])
-            year=2020
-            elist[t_id][s_id]=year
-            rlist[s_id][t_id]=year
-        print('end edge {}'.format(fpEdge))
+            try:
+                s_type = strSourceType
+                t_type = strTargetType
+                r_type = strTypeForEdge
+                elist = edg[t_type][s_type][r_type]
+                rlist = edg[s_type][t_type]['rev_' + r_type]
+                strTextSource = arrTabsItem[0]
+                strTextTarget = arrTabsItem[1]
+                if strTextSource in dictValuesToLiterals.keys():
+                    strTextSource = dictValuesToLiterals[strTextSource]
+                if strTextTarget in dictValuesToLiterals.keys():
+
+                    strNewTextTarget = dictValuesToLiterals[strTextTarget]
+                    # print('text target {} AAAA {}'.format(strTextTarget,strNewTextTarget))
+                    strTextTarget=strNewTextTarget
+
+                if(strTextSource=='' or strTextTarget==''):
+                    continue
+
+                if strTextSource != 'translation_unit':
+                    s_id = dictAllNodes[s_type][strTextSource][0]
+                else:
+                    strRootKey = arrTabsItem[2].split('\t')[1]
+                    s_id = dictAllNodes[s_type][strRootKey][0]
+                # s_id=dictAllNodes[s_type][arrTabsItem[0]][0]
+                # print('t_type {} BBB {} AAA {}'.format(t_type,arrTabsItem[1],strTextTarget))
+                t_id = dictAllNodes[t_type][strTextTarget][0]
+                # year=int(arrTabsItem[3])
+                year = 2020
+                elist[t_id][s_id] = year
+                rlist[s_id][t_id] = year
+            except:
+                traceback.print_exc()
+                quit()
+
+    print('end edge {}'.format(fpEdge))
 edg = {}
 deg={}
 # deg = {key : np.zeros(data.num_nodes[key]) for key in data.num_nodes}
@@ -190,7 +232,7 @@ deg['ProgramRoot']= np.zeros(len(dictProgramRoots.keys()))
 deg['NLRoot']= np.zeros(len(dictNLRoots.keys()))
 deg['ASTNode']= np.zeros(len(dictASTNodes.keys()))
 deg['NLNode']= np.zeros(len(dictNLNodes.keys()))
-print('deg {}\n{}\n{}'.format(deg.keys(),type(deg),len(deg['ProgramElement'])))
+print('deg {}\n{}\n{}'.format(deg.keys(),type(deg),len(deg['ASTNode'])))
 
 # custom step2
 for k1 in graph.edge_list:
@@ -214,8 +256,8 @@ for k1 in graph.edge_list:
             print('item inside k1 k2 k3 ', k1, k2, k3, len(edg[k1][k2][k3]), type(edg[k1][k2][k3]))
 graph.edge_list = edg
 
-fopTokenEmbed=fopInputEmbeddingModel+'token_embed/'
-fopParagraphEmbed=fopInputEmbeddingModel+'paragraph_embed/'
+fopTokenEmbed=fopInputEmbeddingModel+'token_emb/'
+fopParagraphEmbed=fopInputEmbeddingModel+'paragraph_emb/'
 lstFpTokenEmbed=sorted(glob.glob(fopTokenEmbed+'*.txt'))
 lstFpParagraphEmbed=sorted(glob.glob(fopParagraphEmbed+'*.txt'))
 dictVectorProgramRoot={}
@@ -230,21 +272,22 @@ for fpParaItem in lstFpParagraphEmbed:
         arrNLRInfo=arrItemVectors[i+1].split('\t')
         if(len(arrPRInfo)>=4 and len(arrNLRInfo)>=4):
             strId=arrNLRInfo[1]+'-'+arrNLRInfo[2]
+            # print('idididd {} {}'.format(i,strId))
             dictVectorProgramRoot['ProgramRoot_'+strId]=[float(item) for item in arrPRInfo[3].split()]
-            dictVectorProgramRoot['NLRoot_'+strId]=[float(item) for item in arrNLRInfo[3].split()]
+            dictVectorNLRoot['NLRoot_'+strId]=[float(item) for item in arrNLRInfo[3].split()]
             if lengthOfVector==0:
                 lengthOfVector=len(dictVectorProgramRoot['ProgramRoot_'+strId])
 lstVectorPRs=[]
 for i in range(0,len(dictProgramRoots.keys())):
-    key=dictProgramRoots.keys()[i]
+    key=list(dictProgramRoots.keys())[i]
     # val=dictProgramRoots[key]
     lstVectorPRs.append(dictVectorProgramRoot[key])
 
 lstVectorNLRs=[]
 for i in range(0,len(dictNLRoots.keys())):
-    key=dictNLRoots.keys()[i]
+    key=list(dictNLRoots.keys())[i]
     # val=dictNLRoots[key]
-    lstVectorNLRs.append(dictVectorNLRoot[i])
+    lstVectorNLRs.append(dictVectorNLRoot[key])
 
 dictVectorTokens={}
 for fpTokenItem in lstFpTokenEmbed:
@@ -254,11 +297,11 @@ for fpTokenItem in lstFpTokenEmbed:
     for i in range(0,len(arrItemVectors)):
         arrTabs=arrItemVectors[i].split('\t')
         if len(arrTabs)>=2:
-            dictVectorTokens=[float(item) for item in arrTabs[1].split()]
+            dictVectorTokens[arrTabs[0]]=[float(item) for item in arrTabs[1].split()]
 
 lstVectorASTNode=[]
 for i in range(0,len(dictASTNodes.keys())):
-    strKey=dictASTNodes.keys()[i]
+    strKey=list(dictASTNodes.keys())[i]
     if strKey in dictVectorTokens.keys():
         lstVectorASTNode.append(dictVectorTokens[strKey])
     else:
@@ -266,7 +309,7 @@ for i in range(0,len(dictASTNodes.keys())):
 
 lstVectorNLNode=[]
 for i in range(0,len(dictNLNodes.keys())):
-    strKey=dictNLNodes.keys()[i]
+    strKey=list(dictNLNodes.keys())[i]
     if strKey in dictVectorTokens.keys():
         lstVectorNLNode.append(dictVectorTokens[strKey])
     else:
