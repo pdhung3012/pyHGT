@@ -13,11 +13,11 @@ parser = argparse.ArgumentParser(description='Preprocess ogbn-mag graph')
 '''
     Dataset arguments
 '''
-parser.add_argument('--input_mixgraph_dir', type=str, default='/home/hungphd/media/dataPapersExternal/mixCodeRaw/step5_totalGraph/all/',
+parser.add_argument('--input_mixgraph_dir', type=str, default='/home/hungphd/media/dataPapersExternal/mixCodeRaw/step5_totalGraph/3/',
                     help='The address of input spoc dataset.')
 parser.add_argument('--input_embedding_dir', type=str, default='/home/hungphd/media/dataPapersExternal/mixCodeRaw/embeddingModels/d2v/',
                     help='The address of pretrained embedding model.')
-parser.add_argument('--output_dir', type=str, default='/home/hungphd/media/dataPapersExternal/mixCodeRaw/step6_hgt/all/mixcode_spoc.pk',
+parser.add_argument('--output_dir', type=str, default='/home/hungphd/media/dataPapersExternal/mixCodeRaw/step6_hgt/3/mixcode_spoc.pk',
                     help='The address to output the preprocessed graph.')
 
 args = parser.parse_args()
@@ -377,11 +377,17 @@ split_idx = dataset.get_idx_split()
 # print('type train_paper {} {}'.format(valid_paper[10],type(train_paper)))
 
 lstNLR=range(0,len(dictNLRoots.keys()))
-trainEndIndex=dictRangeTrainTest['train'][1]+1
-validStartIndex=dictRangeTrainTest['testP'][0]
-validEndIndex=dictRangeTrainTest['testP'][1]+1
-testStartIndex=dictRangeTrainTest['testW'][0]
-testEndIndex=dictRangeTrainTest['testW'][1]+1
+# trainEndIndex=dictRangeTrainTest['train'][1]+1
+# validStartIndex=dictRangeTrainTest['testP'][0]
+# validEndIndex=dictRangeTrainTest['testP'][1]+1
+# testStartIndex=dictRangeTrainTest['testW'][0]
+# testEndIndex=dictRangeTrainTest['testW'][1]+1
+
+trainEndIndex=int(len(lstNLR)*0.8)
+validStartIndex=int(len(lstNLR)*0.8)
+validEndIndex=int(len(lstNLR)*0.9)
+testStartIndex=int(len(lstNLR)*0.9)
+testEndIndex=len(lstNLR)
 train_paper = np.asarray(lstNLR[:trainEndIndex])
 valid_paper = np.asarray(lstNLR[validStartIndex:validEndIndex])
 test_paper  = np.asarray(lstNLR[testStartIndex:testEndIndex])

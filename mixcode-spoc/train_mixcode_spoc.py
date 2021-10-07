@@ -3,8 +3,8 @@ from tqdm import tqdm
 import sys
 
 from sklearn.metrics import f1_score
-from pyHGT.data import *
-from pyHGT.model import *
+from pyHGT_SPoC.data import *
+from pyHGT_SPoC.model import *
 from warnings import filterwarnings
 
 filterwarnings("ignore")
@@ -20,9 +20,9 @@ from ogb.nodeproppred import PygNodePropPredDataset, Evaluator
 
 parser = argparse.ArgumentParser(description='Training GNN on ogbn-mag benchmark')
 
-parser.add_argument('--data_dir', type=str, default='/home/hungphd/media/dataPapersExternal/mixCodeRaw/step6_hgt/all/mixcode_spoc.pk',
+parser.add_argument('--data_dir', type=str, default='/home/hungphd/media/dataPapersExternal/mixCodeRaw/step6_hgt/3/mixcode_spoc.pk',
                     help='The address of preprocessed graph.')
-parser.add_argument('--model_dir', type=str, default='/home/hungphd/media/dataPapersExternal/mixCodeRaw/step6_hgt/all/hgt_4layer',
+parser.add_argument('--model_dir', type=str, default='/home/hungphd/media/dataPapersExternal/mixCodeRaw/step6_hgt/3/hgt_4layer',
                     help='The address for storing the trained models.')
 parser.add_argument('--plot', action='store_true',
                     help='Whether to plot the loss/acc curve')
