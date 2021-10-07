@@ -377,17 +377,17 @@ split_idx = dataset.get_idx_split()
 # print('type train_paper {} {}'.format(valid_paper[10],type(train_paper)))
 
 lstNLR=range(0,len(dictNLRoots.keys()))
-# trainEndIndex=dictRangeTrainTest['train'][1]+1
-# validStartIndex=dictRangeTrainTest['testP'][0]
-# validEndIndex=dictRangeTrainTest['testP'][1]+1
-# testStartIndex=dictRangeTrainTest['testW'][0]
-# testEndIndex=dictRangeTrainTest['testW'][1]+1
+trainEndIndex=dictRangeTrainTest['train'][1]+1
+validStartIndex=dictRangeTrainTest['testP'][0]
+validEndIndex=dictRangeTrainTest['testP'][1]+1
+testStartIndex=dictRangeTrainTest['testW'][0]
+testEndIndex=dictRangeTrainTest['testW'][1]+1
 
-trainEndIndex=int(len(lstNLR)*0.8)
-validStartIndex=int(len(lstNLR)*0.8)
-validEndIndex=int(len(lstNLR)*0.9)
-testStartIndex=int(len(lstNLR)*0.9)
-testEndIndex=len(lstNLR)
+# trainEndIndex=int(len(lstNLR)*0.8)
+# validStartIndex=int(len(lstNLR)*0.8)
+# validEndIndex=int(len(lstNLR)*0.9)
+# testStartIndex=int(len(lstNLR)*0.9)
+# testEndIndex=len(lstNLR)
 train_paper = np.asarray(lstNLR[:trainEndIndex])
 valid_paper = np.asarray(lstNLR[validStartIndex:validEndIndex])
 test_paper  = np.asarray(lstNLR[testStartIndex:testEndIndex])

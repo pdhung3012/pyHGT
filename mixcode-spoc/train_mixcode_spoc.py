@@ -44,7 +44,7 @@ parser.add_argument('--sample_depth', type=int, default=6,
 parser.add_argument('--sample_width', type=int, default=520,
                     help='How many nodes to be sampled per layer per type')
 
-parser.add_argument('--n_epoch', type=int, default=50,
+parser.add_argument('--n_epoch', type=int, default=100,
                     help='Number of epoch to run')
 parser.add_argument('--n_pool', type=int, default=8,
                     help='Number of process to sample subgraph')
