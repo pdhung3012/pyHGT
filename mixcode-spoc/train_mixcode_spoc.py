@@ -22,7 +22,7 @@ parser = argparse.ArgumentParser(description='Training GNN on ogbn-mag benchmark
 
 parser.add_argument('--data_dir', type=str, default='/home/hungphd/media/dataPapersExternal/mixCodeRaw/step6_hgt/all/mixcode_spoc.pk',
                     help='The address of preprocessed graph.')
-parser.add_argument('--model_dir', type=str, default='/home/hungphd/media/dataPapersExternal/mixCodeRaw/step6_hgt/all/hgt_8layer',
+parser.add_argument('--model_dir', type=str, default='/home/hungphd/media/dataPapersExternal/mixCodeRaw/step6_hgt/all/hgt_4layer',
                     help='The address for storing the trained models.')
 parser.add_argument('--plot', action='store_true',
                     help='Whether to plot the loss/acc curve')
@@ -44,7 +44,7 @@ parser.add_argument('--sample_depth', type=int, default=6,
 parser.add_argument('--sample_width', type=int, default=520,
                     help='How many nodes to be sampled per layer per type')
 
-parser.add_argument('--n_epoch', type=int, default=400,
+parser.add_argument('--n_epoch', type=int, default=50,
                     help='Number of epoch to run')
 parser.add_argument('--n_pool', type=int, default=8,
                     help='Number of process to sample subgraph')
