@@ -392,7 +392,6 @@ train_paper = np.asarray(lstNLR[:trainEndIndex])
 valid_paper = np.asarray(lstNLR[validStartIndex:validEndIndex])
 test_paper  = np.asarray(lstNLR[testStartIndex:testEndIndex])
 
-
 graph.y = y
 graph.train_paper = train_paper
 graph.valid_paper = valid_paper
