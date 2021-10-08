@@ -20,9 +20,9 @@ from ogb.nodeproppred import PygNodePropPredDataset, Evaluator
 
 parser = argparse.ArgumentParser(description='Training GNN on ogbn-mag benchmark')
 
-parser.add_argument('--data_dir', type=str, default='/home/hungphd/media/dataPapersExternal/mixCodeRaw/step6_hgt/5/mixcode_spoc.pk',
+parser.add_argument('--data_dir', type=str, default='/home/hungphd/media/dataPapersExternal/mixCodeRaw/step6_hgt_problem3/all/mixcode_spoc.pk',
                     help='The address of preprocessed graph.')
-parser.add_argument('--model_dir', type=str, default='/home/hungphd/media/dataPapersExternal/mixCodeRaw/step6_hgt/5/hgt_4layer',
+parser.add_argument('--model_dir', type=str, default='/home/hungphd/media/dataPapersExternal/mixCodeRaw/step6_hgt_problem3/all/hgt_4layer',
                     help='The address for storing the trained models.')
 parser.add_argument('--task_type', type=str, default='variance_reduce',
                     help='Whether to use variance_reduce evaluation or sequential evaluation')

@@ -13,11 +13,11 @@ parser = argparse.ArgumentParser(description='Preprocess ogbn-mag graph')
 '''
     Dataset arguments
 '''
-parser.add_argument('--input_mixgraph_dir', type=str, default='/home/hungphd/media/dataPapersExternal/mixCodeRaw/step5_totalGraph/5/',
+parser.add_argument('--input_mixgraph_dir', type=str, default='/home/hungphd/media/dataPapersExternal/mixCodeRaw/step5_totalGraph/all/',
                     help='The address of input spoc dataset.')
 parser.add_argument('--input_embedding_dir', type=str, default='/home/hungphd/media/dataPapersExternal/mixCodeRaw/embeddingModels/d2v/',
                     help='The address of pretrained embedding model.')
-parser.add_argument('--output_dir', type=str, default='/home/hungphd/media/dataPapersExternal/mixCodeRaw/step6_hgt/5/mixcode_spoc.pk',
+parser.add_argument('--output_dir', type=str, default='/home/hungphd/media/dataPapersExternal/mixCodeRaw/step6_hgt_problem3/all/mixcode_spoc.pk',
                     help='The address to output the preprocessed graph.')
 
 args = parser.parse_args()
@@ -28,7 +28,7 @@ fpOutputGraph=args.output_dir
 fopOutputGraph=os.path.dirname(fpOutputGraph)
 createDirIfNotExist(fopOutputGraph)
 
-problemId=0
+problemId=2
 fopRoot='/home/hungphd/media/dataPapersExternal/mixCodeRaw/'
 fpDictLiterals=fopRoot+'step2_dictLiterals_all.txt'
 fpNodeProgramRoot=fopInputMixGraph+'nodes_ProgramRoot.txt'
