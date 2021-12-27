@@ -406,7 +406,8 @@ def test():
     accs = []
     for split in ['train_mask', 'val_mask', 'test_mask']:
         mask = data['NLRoot'][split]
-        print('mask {} {}'.format(split,len(mask)))
+        # print('mask {} {}'.format(split,len(pred[mask])))
+        # print('element {}'.format(pred[mask][0]))
         acc = (pred[mask] == data['NLRoot'].y[mask]).sum() / mask.sum()
         accs.append(float(acc))
     return accs
