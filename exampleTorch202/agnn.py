@@ -10,7 +10,8 @@ dataset = 'Cora'
 path = osp.join(osp.dirname(osp.realpath(__file__)), '..', 'data', dataset)
 dataset = Planetoid(path, dataset, transform=T.NormalizeFeatures())
 data = dataset[0]
-
+print(data)
+input('press key to move forward')
 
 class Net(torch.nn.Module):
     def __init__(self):

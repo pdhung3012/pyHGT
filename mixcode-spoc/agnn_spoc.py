@@ -2,57 +2,17 @@ import os.path as osp
 
 import torch
 import torch.nn.functional as F
-from torch_geometric.datasets import DBLP
-from torch_geometric.nn import Linear, HGTConv
+from torch_geometric.datasets import Planetoid
+import torch_geometric.transforms as T
+from torch_geometric.nn import AGNNConv
+import numpy as np
 from UtilFunctions_RTX3090 import createDirIfNotExist
 import argparse
-import numpy as np
+import os
 import glob
-from sentence_transformers import SentenceTransformer
-import os,traceback
+import traceback
 
-from torch_geometric.data import HeteroData, download_url, extract_zip
-from torch_geometric.transforms import ToUndirected, RandomLinkSplit
-
-# path = osp.join(osp.dirname(osp.realpath(__file__)), '../../data/DBLP')
-# dataset = DBLP(path)
-# data = dataset[0]
-# print(data)
-# print(type(data))
-# print(type(data.edge_index_dict.keys()))
-# for key in data.edge_index_dict.keys():
-#     print(type(key))
-#     print(data.edge_index_dict[key][2][15])
-# print(data.edge_index_dict.keys())
-# # We initialize conference node features with a single feature.
-# data['conference'].x = torch.ones(data['conference'].num_nodes, 1)
-
-class HGT(torch.nn.Module):
-    def __init__(self, hidden_channels, out_channels, num_heads, num_layers):
-        super().__init__()
-
-        self.lin_dict = torch.nn.ModuleDict()
-        for node_type in data.node_types:
-            self.lin_dict[node_type] = Linear(-1, hidden_channels)
-
-        self.convs = torch.nn.ModuleList()
-        for _ in range(num_layers):
-            conv = HGTConv(hidden_channels, hidden_channels, data.metadata(),
-                           num_heads, group='sum')
-            self.convs.append(conv)
-
-        self.lin = Linear(hidden_channels, out_channels)
-
-    def forward(self, x_dict, edge_index_dict):
-        for node_type, x in x_dict.items():
-            x_dict[node_type] = self.lin_dict[node_type](x).relu_()
-
-        for conv in self.convs:
-            x_dict = conv(x_dict, edge_index_dict)
-
-        return self.lin(x_dict['NLRoot'])
-
-
+# begin load SPoC data
 strSplitCharacterForNodeEdge=' ABAZ '
 parser = argparse.ArgumentParser(description='Preprocess ogbn-mag graph')
 
@@ -101,47 +61,12 @@ dictASTNodes={}
 dictNLRoots={}
 dictNLNodes={}
 
-f1=open(fpNodeProgramRoot,'r')
-arrPRs=f1.read().strip().split('\n')
-f1.close()
-dictProgramRoots={}
-dictRangeTrainTest={}
-prevTrainTest=''
-dictLabelsTextToInt={}
-# lstIdxLabels=[]
-lstLabelIds=[]
-dictCountValueInLabel={}
-for i in range(0,len(arrPRs)):
-    item=arrPRs[i]
-    arrItemContent=item.split(strSplitCharacterForNodeEdge)
-    if len(arrItemContent)>=3:
-        id=len(dictProgramRoots.keys())
-        strTrainTest=arrItemContent[2].split('\t')[0]
-        strLabel=arrItemContent[1].split('\t')[problemId]
-        if strLabel not in dictLabelsTextToInt.keys():
-            dictLabelsTextToInt[strLabel] = len(dictLabelsTextToInt.keys())
-            dictCountValueInLabel[strLabel] = 0
-        dictCountValueInLabel[strLabel] = dictCountValueInLabel[strLabel] + 1
-        idxLabel = dictLabelsTextToInt[strLabel]
-        # lstIdxLabels.append(idxLabel)
-        tup = [id, arrItemContent[0],idxLabel]
-        dictProgramRoots[arrItemContent[0]]=tup
-
-        if strTrainTest not in dictRangeTrainTest.keys():
-            dictRangeTrainTest[strTrainTest]=[i,-1]
-
-        if prevTrainTest!='' and prevTrainTest!=strTrainTest:
-            dictRangeTrainTest[prevTrainTest][1]=i-1
-        if (i+1)==len(arrPRs):
-            dictRangeTrainTest[strTrainTest][1]=i-1
-        prevTrainTest=strTrainTest
-
-
 f1=open(fpNodeNLRoot,'r')
 arrNLRs=f1.read().strip().split('\n')
 f1.close()
 dictNLRoots={}
-lstYears=[]
+dictLabelsTextToInt={}
+dictAllNodesAndIds={}
 lstIdxLabels=[]
 for i in range(0,len(arrNLRs)):
     item=arrNLRs[i]
@@ -150,14 +75,48 @@ for i in range(0,len(arrNLRs)):
         id=len(dictNLRoots.keys())
         strTrainTest=arrItemContent[2].split('\t')[0]
         strLabel=arrItemContent[1].split('\t')[problemId]
-        # if strLabel not in dictLabelsTextToInt.keys():
-        #     dictLabelsTextToInt[strLabel]=len(dictLabelsTextToInt.keys())+1
+        if strLabel not in dictLabelsTextToInt.keys():
+            dictLabelsTextToInt[strLabel]=len(dictLabelsTextToInt.keys())
         idxLabel=dictLabelsTextToInt[strLabel]
         lstIdxLabels.append(idxLabel)
         tup = [id, arrItemContent[0],idxLabel]
         dictNLRoots[arrItemContent[0]]=tup
-        lstYears.append(2020)
-years=np.asarray(lstYears)
+        strInfoAboutNodeHomo='NLRoot'+strSplitCharacterForNodeEdge+arrItemContent[0]
+        if strInfoAboutNodeHomo not in dictAllNodesAndIds.keys():
+            dictAllNodesAndIds[strInfoAboutNodeHomo]=len(dictAllNodesAndIds.keys())
+
+f1=open(fpNodeProgramRoot,'r')
+arrPRs=f1.read().strip().split('\n')
+f1.close()
+dictProgramRoots={}
+dictRangeTrainTest={}
+prevTrainTest=''
+for i in range(0,len(arrPRs)):
+    item=arrPRs[i]
+    arrItemContent=item.split(strSplitCharacterForNodeEdge)
+    if len(arrItemContent)>=3:
+        id=len(dictProgramRoots.keys())
+        strTrainTest=arrItemContent[2].split('\t')[0]
+        strLabel=arrItemContent[1].split('\t')[problemId]
+        # if strLabel not in dictLabelsTextToInt.keys():
+        #     dictLabelsTextToInt[strLabel] = len(dictLabelsTextToInt.keys())
+        idxLabel = dictLabelsTextToInt[strLabel]
+        lstIdxLabels.append(idxLabel)
+        tup = [id, arrItemContent[0],idxLabel]
+        dictProgramRoots[arrItemContent[0]]=tup
+        strInfoAboutNodeHomo = 'ProgramRoot' + strSplitCharacterForNodeEdge + arrItemContent[0]
+        if strInfoAboutNodeHomo not in dictAllNodesAndIds.keys():
+            dictAllNodesAndIds[strInfoAboutNodeHomo] = len(dictAllNodesAndIds.keys())
+
+        if strTrainTest not in dictRangeTrainTest.keys():
+            dictRangeTrainTest[strTrainTest]=[i,-1]
+        if prevTrainTest!='' and prevTrainTest!=strTrainTest:
+            dictRangeTrainTest[prevTrainTest][1]=i-1
+        if (i+1)==len(arrPRs):
+            dictRangeTrainTest[strTrainTest][1]=i-1
+        prevTrainTest=strTrainTest
+
+
 
 f1=open(fpNodeASTNode,'r')
 arrASTNodes=f1.read().strip().split('\n')
@@ -167,6 +126,12 @@ for i in range(0,len(arrASTNodes)):
     item=arrASTNodes[i]
     id=len(dictASTNodes.keys())
     dictASTNodes[item]=[id]
+    strInfoAboutNodeHomo = 'ASTNode' + strSplitCharacterForNodeEdge + item
+    if strInfoAboutNodeHomo not in dictAllNodesAndIds.keys():
+        dictAllNodesAndIds[strInfoAboutNodeHomo] = len(dictAllNodesAndIds.keys())
+    lstIdxLabels.append(0)
+
+
 
 f1=open(fpNodeNLNode,'r')
 arrNLNodes=f1.read().strip().split('\n')
@@ -176,12 +141,16 @@ for i in range(0,len(arrNLNodes)):
     item=arrNLNodes[i]
     id=len(dictNLNodes.keys())
     dictNLNodes[item]=[id]
-
-dictAllNodes={}
-dictAllNodes['ProgramRoot']=dictProgramRoots
-dictAllNodes['NLRoot']=dictNLRoots
-dictAllNodes['ASTNode']=dictASTNodes
-dictAllNodes['NLNode']=dictNLNodes
+    strInfoAboutNodeHomo = 'NLNode' + strSplitCharacterForNodeEdge + item
+    if strInfoAboutNodeHomo not in dictAllNodesAndIds.keys():
+        dictAllNodesAndIds[strInfoAboutNodeHomo] = len(dictAllNodesAndIds.keys())
+    lstIdxLabels.append(0)
+all_labels=torch.tensor(lstIdxLabels)
+# dictAllNodes={}
+# dictAllNodes['ProgramRoot']=dictProgramRoots
+# dictAllNodes['NLRoot']=dictNLRoots
+# dictAllNodes['ASTNode']=dictASTNodes
+# dictAllNodes['NLNode']=dictNLNodes
 
 fopTokenEmbed=fopInputEmbeddingModel+'token_emb/'
 fopParagraphEmbed=fopInputEmbeddingModel+'paragraph_emb/'
@@ -189,6 +158,7 @@ lstFpTokenEmbed=sorted(glob.glob(fopTokenEmbed+'*.txt'))
 lstFpParagraphEmbed=sorted(glob.glob(fopParagraphEmbed+'*.txt'))
 dictVectorProgramRoot={}
 dictVectorNLRoot={}
+dictAllVectors={}
 lengthOfVector=0
 for fpParaItem in lstFpParagraphEmbed:
     f1=open(fpParaItem,'r')
@@ -202,20 +172,26 @@ for fpParaItem in lstFpParagraphEmbed:
             # print('idididd {} {}'.format(i,strId))
             dictVectorProgramRoot['ProgramRoot_'+strId]=[float(item) for item in arrPRInfo[3].split()]
             dictVectorNLRoot['NLRoot_'+strId]=[float(item) for item in arrNLRInfo[3].split()]
+            # dictAllVectors['ProgramRoot'+strSplitCharacterForNodeEdge+strId]=[float(item) for item in arrPRInfo[3].split()]
+            # dictAllVectors['NLRoot' + strSplitCharacterForNodeEdge + strId]=[float(item) for item in arrNLRInfo[3].split()]
             if lengthOfVector==0:
                 lengthOfVector=len(dictVectorProgramRoot['ProgramRoot_'+strId])
-lstVectorPRs=[]
-for i in range(0,len(dictProgramRoots.keys())):
-    key=list(dictProgramRoots.keys())[i]
-    # val=dictProgramRoots[key]
-    lstVectorPRs.append(dictVectorProgramRoot[key])
 
 lstVectorNLRs=[]
 for i in range(0,len(dictNLRoots.keys())):
     key=list(dictNLRoots.keys())[i]
     # val=dictNLRoots[key]
     lstVectorNLRs.append(dictVectorNLRoot[key])
+    dictAllVectors['NLRoot'+strSplitCharacterForNodeEdge+key]=dictVectorNLRoot[key]
 
+lstVectorPRs=[]
+for i in range(0,len(dictProgramRoots.keys())):
+    key=list(dictProgramRoots.keys())[i]
+    # val=dictProgramRoots[key]
+    lstVectorPRs.append(dictVectorProgramRoot[key])
+    dictAllVectors['ProgramRoot'+strSplitCharacterForNodeEdge+key] = dictVectorProgramRoot[key]
+
+print('size {}'.format(len(dictAllVectors.keys())))
 dictVectorTokens={}
 for fpTokenItem in lstFpTokenEmbed:
     f1=open(fpTokenItem,'r')
@@ -231,45 +207,45 @@ for i in range(0,len(dictASTNodes.keys())):
     strKey=list(dictASTNodes.keys())[i]
     if strKey in dictVectorTokens.keys():
         lstVectorASTNode.append(dictVectorTokens[strKey])
+        dictAllVectors['ASTNode'+strSplitCharacterForNodeEdge+strKey]=dictVectorTokens[strKey]
     else:
         lstVectorASTNode.append(np.zeros(lengthOfVector).tolist())
+        dictAllVectors['ASTNode' + strSplitCharacterForNodeEdge + strKey]=np.zeros(lengthOfVector).tolist()
+
+print('size {}'.format(len(dictAllVectors.keys())))
 
 lstVectorNLNode=[]
 for i in range(0,len(dictNLNodes.keys())):
     strKey=list(dictNLNodes.keys())[i]
     if strKey in dictVectorTokens.keys():
         lstVectorNLNode.append(dictVectorTokens[strKey])
+        dictAllVectors['NLNode' + strSplitCharacterForNodeEdge + strKey] = dictVectorTokens[strKey]
     else:
         lstVectorNLNode.append(np.zeros(lengthOfVector).tolist())
+        dictAllVectors['NLNode' + strSplitCharacterForNodeEdge + strKey] = np.zeros(lengthOfVector).tolist()
 
-npArrayPRs=np.array(lstVectorPRs).astype(np.float32)
-npArrayNLRs=np.array(lstVectorNLRs).astype(np.float32)
-npArrayASTNodes=np.array(lstVectorASTNode).astype(np.float32)
-npArrayNLNodes=np.array(lstVectorNLNode).astype(np.float32)
-
-
-
-data = HeteroData()
-data['ProgramRoot'].x = torch.tensor(npArrayPRs)
-data['NLRoot'].x =torch.tensor(npArrayNLRs)
-data['ASTNode'].x = torch.tensor(npArrayASTNodes)
-data['NLNode'].x =torch.tensor(npArrayNLNodes)
+# npArrayPRs=np.array(lstVectorPRs).astype(np.float32)
+# npArrayNLRs=np.array(lstVectorNLRs).astype(np.float32)
+# npArrayASTNodes=np.array(lstVectorASTNode).astype(np.float32)
+# npArrayNLNodes=np.array(lstVectorNLNode).astype(np.float32)
+listAllVectors=list(dictAllVectors.values())
+npArrayAllVectors=np.array(listAllVectors).astype(np.float32)
 
 dict_edge_index={}
+arrayLoop=[[],[]]
 
 for i in range(0,len(lstFpEdgesList)):
     fpEdge=lstFpEdgesList[i]
     f1=open(fpEdge,'r')
     arrEdges=f1.read().strip().split('\n')
     f1.close()
-    print('begin edge {}'.format(fpEdge))
+    # print('begin edge {}'.format(fpEdge))
     nameFileEdge=os.path.basename(fpEdge)
     strTypeForEdge=nameFileEdge.replace('edges_','').replace('.txt','')
     arrSourceTarget=strTypeForEdge.split(' - ')
     strSourceType=arrSourceTarget[0]
     strTargetType=arrSourceTarget[1]
     tupEdgeLabel=(strSourceType,'to',strTargetType)
-    arrayLoop=[[],[]]
 
     for line in arrEdges:
         arrTabsItem=line.split(strSplitCharacterForNodeEdge)
@@ -293,13 +269,13 @@ for i in range(0,len(lstFpEdgesList)):
                     continue
 
                 if strTextSource != 'translation_unit':
-                    s_id = dictAllNodes[s_type][strTextSource][0]
+                    s_id = dictAllNodesAndIds[s_type+strSplitCharacterForNodeEdge+strTextSource]
                 else:
                     strRootKey = arrTabsItem[2].split('\t')[1]
-                    s_id = dictAllNodes[s_type][strRootKey][0]
+                    s_id = dictAllNodesAndIds[s_type+strSplitCharacterForNodeEdge+strRootKey]
                 # s_id=dictAllNodes[s_type][arrTabsItem[0]][0]
                 # print('t_type {} BBB {} AAA {}'.format(t_type,arrTabsItem[1],strTextTarget))
-                t_id = dictAllNodes[t_type][strTextTarget][0]
+                t_id = dictAllNodesAndIds[t_type+strSplitCharacterForNodeEdge+strTextTarget]
                 # year=int(arrTabsItem[3])
                 # year = 2020
                 # elist[t_id][s_id] = year
@@ -309,21 +285,11 @@ for i in range(0,len(lstFpEdgesList)):
             except:
                 traceback.print_exc()
                 quit()
-    data[tupEdgeLabel[0], tupEdgeLabel[1], tupEdgeLabel[2]].edge_index = torch.tensor(arrayLoop)
+    # data[tupEdgeLabel[0], tupEdgeLabel[1], tupEdgeLabel[2]].edge_index = torch.tensor(arrayLoop)
     # dict_edge_index[tupEdgeLabel]=torch.tensor(arrayLoop)
+    # print('end edge {}'.format(fpEdge))
+all_edge_index=torch.tensor(arrayLoop)
 
-    print('end edge {}'.format(fpEdge))
-
-# lstTrainMask=range(0,len(dictNLRoots.keys()))
-# lstValidMask=range(0,len(dictNLRoots.keys()))
-# lstTestMask=range(0,len(dictNLRoots.keys()))
-
-print(dictRangeTrainTest)
-# trainEndIndex=dictRangeTrainTest['train'][1]+1
-# validStartIndex=dictRangeTrainTest['testP'][0]
-# validEndIndex=dictRangeTrainTest['testP'][1]+1
-# testStartIndex=dictRangeTrainTest['testW'][0]
-# testEndIndex=dictRangeTrainTest['testW'][1]+1
 trainEndIndex=16000
 validStartIndex=16000
 validEndIndex=18000
@@ -335,7 +301,7 @@ lstTrainMask=[]
 lstValidMask=[]
 lstTestMask=[]
 
-for i in range(0,len(dictNLRoots.keys())):
+for i in range(0,len(dictAllNodesAndIds.keys())):
     if i>=0 and i<trainEndIndex:
         lstTrainMask.append(True)
         lstValidMask.append(False)
@@ -352,70 +318,78 @@ for i in range(0,len(dictNLRoots.keys())):
         lstTrainMask.append(False)
         lstValidMask.append(False)
         lstTestMask.append(False)
-data = ToUndirected()(data)
 train_mask=torch.tensor(lstTrainMask)
 val_mask=torch.tensor(lstValidMask)
 test_mask=torch.tensor(lstTestMask)
-print(val_mask)
-data['NLRoot'].train_mask=train_mask
-data['NLRoot'].val_mask=val_mask
-data['NLRoot'].test_mask=test_mask
-data['NLRoot'].y=torch.tensor(lstIdxLabels)
+
+
+# end load SPoC data
+dataset = 'Cora'
+path = osp.join(osp.dirname(osp.realpath(__file__)), '..', 'data', dataset)
+dataset = Planetoid(path, dataset, transform=T.NormalizeFeatures())
+data = dataset[0]
+data.x=torch.tensor(npArrayAllVectors)
+data.y=torch.tensor(all_labels)
+data.edge_index=all_edge_index
+data.train_mask=train_mask
+data.val_mask=val_mask
+data.test_mask=test_mask
+
 print(data)
-print(type(data.x_dict))
+print('{}\t{}'.format(len(data.x),len(data.train_mask)))
+input('press key to move forward')
 
+class Net(torch.nn.Module):
+    def __init__(self,num_features,num_classes):
+        super().__init__()
+        self.lin1 = torch.nn.Linear(num_features, 16)
+        self.prop1 = AGNNConv(requires_grad=False)
+        self.prop2 = AGNNConv(requires_grad=True)
+        self.lin2 = torch.nn.Linear(16, num_classes)
+        # print('type {} {}'.format(type(dataset.num_features),type(dataset.num_classes)))
+        # print('val {} {}'.format(dataset.num_features, dataset.num_classes))
+        # print('type {} {}'.format(type(data.x), type(data.edge_index)))
+        # print('val {} {}'.format(data.x.shape, data.edge_index.shape))
+        # print('edge index {}'.format(data.edge_index))
 
+    def forward(self):
+        x = F.dropout(data.x, training=self.training)
+        x = F.relu(self.lin1(x))
+        x = self.prop1(x, data.edge_index)
+        x = self.prop2(x, data.edge_index)
+        x = F.dropout(x, training=self.training)
+        x = self.lin2(x)
+        return F.log_softmax(x, dim=1)
 
-model = HGT(hidden_channels=64, out_channels= len(dictCountValueInLabel.keys()), num_heads=2, num_layers=1)
-# for name, param in model.named_parameters():
-#     if param.requires_grad:
-#         print('{} value {}'.format(name, param.data))
-
+num_classes=len(dictLabelsTextToInt.keys())
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-print('devide {}'.format(device))
-data, model = data.to(device), model.to(device)
-
-with torch.no_grad():  # Initialize lazy modules.
-    out = model(data.x_dict, data.edge_index_dict)
-
-optimizer = torch.optim.Adam(model.parameters(), lr=0.005, weight_decay=0.001)
+model, data = Net(num_features=lengthOfVector,num_classes=num_classes).to(device), data.to(device)
+optimizer = torch.optim.Adam(model.parameters(), lr=0.01, weight_decay=5e-4)
 
 
 def train():
     model.train()
     optimizer.zero_grad()
-    out = model(data.x_dict, data.edge_index_dict)
-    # print(data.x_dict)
-    # print(type(data.x_dict))
-    # input('aaa ')
-    # print(data.edge_index_dict)
-    # print(type(data.edge_index_dict))
-    # input('bbb ')
-    mask = data['NLRoot'].train_mask
-    loss = F.cross_entropy(out[mask], data['NLRoot'].y[mask])
-    # print('loss {}'.format(loss))
-    loss.backward()
+    F.nll_loss(model()[data.train_mask], data.y[data.train_mask]).backward()
     optimizer.step()
-    return float(loss)
 
 
-@torch.no_grad()
 def test():
     model.eval()
-    pred = model(data.x_dict, data.edge_index_dict).argmax(dim=-1)
-
-    accs = []
-    for split in ['train_mask', 'val_mask', 'test_mask']:
-        mask = data['NLRoot'][split]
-        print('mask {} {}'.format(split,len(mask)))
-        acc = (pred[mask] == data['NLRoot'].y[mask]).sum() / mask.sum()
-        accs.append(float(acc))
+    logits, accs = model(), []
+    for _, mask in data('train_mask', 'val_mask', 'test_mask'):
+        pred = logits[mask].max(1)[1]
+        acc = pred.eq(data.y[mask]).sum().item() / mask.sum().item()
+        accs.append(acc)
     return accs
 
 
-for epoch in range(1, 101):
-    loss = train()
-    train_acc, val_acc, test_acc = test()
-    print(f'Epoch: {epoch:03d}, Loss: {loss:.4f}, Train: {train_acc:.4f}, '
-          f'Val: {val_acc:.4f}, Test: {test_acc:.4f}')
-test()
+best_val_acc = test_acc = 0
+for epoch in range(1, 201):
+    train()
+    train_acc, val_acc, tmp_test_acc = test()
+    if val_acc > best_val_acc:
+        best_val_acc = val_acc
+        test_acc = tmp_test_acc
+    print(f'Epoch: {epoch:03d}, Train: {train_acc:.4f}, '
+          f'Val: {best_val_acc:.4f}, Test: {test_acc:.4f}')

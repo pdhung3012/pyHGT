@@ -12,7 +12,7 @@ from torch_geometric.loader import NeighborLoader, HGTLoader
 from torch_geometric.nn import Sequential, SAGEConv, Linear, to_hetero
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--use_hgt_loader', action='store_true')
+parser.add_argument('--use_hgt_loader',default=1, action='store_true')
 args = parser.parse_args()
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -48,6 +48,7 @@ model = Sequential('x, edge_index', [
 ])
 model = to_hetero(model, data.metadata(), aggr='sum').to(device)
 
+# model=model.to(device)
 
 @torch.no_grad()
 def init_params():
