@@ -74,7 +74,7 @@ fpOutputGraph=args.output_dir
 fopOutputGraph=os.path.dirname(fpOutputGraph)
 createDirIfNotExist(fopOutputGraph)
 
-problemId=2
+problemId=0
 fopRoot='/home/hungphd/media/dataPapersExternal/mixCodeRaw/'
 fpDictLiterals=fopRoot+'step2_dictLiterals_all.txt'
 fpNodeProgramRoot=fopInputMixGraph+'nodes_ProgramRoot.txt'
@@ -261,7 +261,7 @@ for i in range(0,len(lstFpEdgesList)):
     f1=open(fpEdge,'r')
     arrEdges=f1.read().strip().split('\n')
     f1.close()
-    print('begin edge {}'.format(fpEdge))
+    # print('begin edge {}'.format(fpEdge))
     nameFileEdge=os.path.basename(fpEdge)
     strTypeForEdge=nameFileEdge.replace('edges_','').replace('.txt','')
     arrSourceTarget=strTypeForEdge.split(' - ')
@@ -311,13 +311,13 @@ for i in range(0,len(lstFpEdgesList)):
     data[tupEdgeLabel[0], tupEdgeLabel[1], tupEdgeLabel[2]].edge_index = torch.tensor(arrayLoop)
     # dict_edge_index[tupEdgeLabel]=torch.tensor(arrayLoop)
 
-    print('end edge {}'.format(fpEdge))
+    # print('end edge {}'.format(fpEdge))
 
 # lstTrainMask=range(0,len(dictNLRoots.keys()))
 # lstValidMask=range(0,len(dictNLRoots.keys()))
 # lstTestMask=range(0,len(dictNLRoots.keys()))
 
-print(dictRangeTrainTest)
+# print(dictRangeTrainTest)
 # trainEndIndex=dictRangeTrainTest['train'][1]+1
 # validStartIndex=dictRangeTrainTest['testP'][0]
 # validEndIndex=dictRangeTrainTest['testP'][1]+1
@@ -355,13 +355,13 @@ data = ToUndirected()(data)
 train_mask=torch.tensor(lstTrainMask)
 val_mask=torch.tensor(lstValidMask)
 test_mask=torch.tensor(lstTestMask)
-print(val_mask)
+# print(val_mask)
 data['NLRoot'].train_mask=train_mask
 data['NLRoot'].val_mask=val_mask
 data['NLRoot'].test_mask=test_mask
 data['NLRoot'].y=torch.tensor(lstIdxLabels)
-print(data)
-print(type(data.x_dict))
+# print(data)
+# print(type(data.x_dict))
 
 
 
@@ -371,7 +371,7 @@ model = HGT(hidden_channels=64, out_channels= len(dictCountValueInLabel.keys()),
 #         print('{} value {}'.format(name, param.data))
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-print('devide {}'.format(device))
+# print('devide {}'.format(device))
 data, model = data.to(device), model.to(device)
 
 with torch.no_grad():  # Initialize lazy modules.
@@ -413,7 +413,7 @@ def test():
     return accs
 
 
-for epoch in range(1, 101):
+for epoch in range(1, 500):
     loss = train()
     train_acc, val_acc, test_acc = test()
     print(f'Epoch: {epoch:03d}, Loss: {loss:.4f}, Train: {train_acc:.4f}, '
