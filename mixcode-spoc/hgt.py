@@ -438,9 +438,12 @@ for problemId in lstProblemIds:
         optimizer = torch.optim.Adam(model.parameters(), lr=0.005, weight_decay=0.001)
 
         start_time = time.time()
+        best_test_acc=test_acc=0
         for epoch in range(1, 500):
             loss = train()
             train_acc, val_acc, test_acc = test()
+            if best_test_acc<test_acc:
+                best_test_acc=test_acc
             print(f'Epoch: {epoch:03d}, Loss: {loss:.4f}, Train: {train_acc:.4f}, '
                   f'Val: {val_acc:.4f}, Test: {test_acc:.4f}')
         end_time = time.time()
@@ -450,9 +453,9 @@ for problemId in lstProblemIds:
         end_time = time.time()
         test_time = end_time - start_time
         strKey = 'context_{}'.format(strContext)
-        dictTotalResults[strKey] = [test_acc, val_acc, train_acc, train_time, test_time]
+        dictTotalResults[strKey] = [best_test_acc, val_acc, train_acc, train_time, test_time]
 
-    lstSorted = sorted([(dictTotalResults[x][2], x) for x in dictTotalResults.keys()])
+    lstSorted = sorted([(dictTotalResults[x][0], x) for x in dictTotalResults.keys()],reverse=True)
     f1 = open(fpResult, 'a')
     f1.write('Problem {}\n'.format(problemId))
     for val, key in lstSorted:

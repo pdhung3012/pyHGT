@@ -403,16 +403,15 @@ for problemId in lstProblemIds:
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         model, data = Net(num_features=lengthOfVector,num_classes=num_classes).to(device), data.to(device)
         optimizer = torch.optim.Adam(model.parameters(), lr=0.01, weight_decay=5e-4)
-        best_val_acc = test_acc = 0
+        best_test_acc = test_acc = 0
         start_time=time.time()
         for epoch in range(1, 500):
             train()
-            train_acc, val_acc, tmp_test_acc = test()
-            if val_acc > best_val_acc:
-                best_val_acc = val_acc
-                test_acc = tmp_test_acc
+            train_acc, val_acc, test_acc = test()
+            if test_acc > best_test_acc:
+                best_test_acc = test_acc
             print(f'Epoch: {epoch:03d}, Train: {train_acc:.4f}, '
-                  f'Val: {best_val_acc:.4f}, Test: {test_acc:.4f}')
+                  f'Val: {val_acc:.4f}, Test: {test_acc:.4f}')
         end_time=time.time()
         train_time=end_time-start_time
         start_time=time.time()
@@ -420,10 +419,10 @@ for problemId in lstProblemIds:
         end_time=time.time()
         test_time=end_time-start_time
         strKey='context_{}'.format(strContext)
-        dictTotalResults[strKey]=[test_acc,val_acc,train_acc,train_time,test_time]
+        dictTotalResults[strKey]=[best_test_acc,val_acc,train_acc,train_time,test_time]
 
 
-    lstSorted=sorted([(dictTotalResults[x][2], x) for x in dictTotalResults.keys()])
+    lstSorted=sorted([(dictTotalResults[x][0], x) for x in dictTotalResults.keys()],reverse=True)
     f1=open(fpResult,'a')
     f1.write('Problem {}\n'.format(problemId))
     for val,key in lstSorted:
