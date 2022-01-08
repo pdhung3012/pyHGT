@@ -92,11 +92,11 @@ parser = argparse.ArgumentParser(description='Preprocess ogbn-mag graph')
 '''
     Dataset arguments
 '''
-parser.add_argument('--input_mixgraph_dir', type=str, default='/home/hungphd/media/dataPapersExternal/mixCodeRaw/step5_totalGraph_small/BBBBB/',
+parser.add_argument('--input_mixgraph_dir', type=str, default='/home/hungphd/media/dataPapersExternal/mixCodeRaw/step5_origin/BBBBB/',
                     help='The address of input spoc dataset.')
 parser.add_argument('--input_embedding_dir', type=str, default='/home/hungphd/media/dataPapersExternal/mixCodeRaw/embeddingModels/d2v/',
                     help='The address of pretrained embedding model.')
-parser.add_argument('--output_dir', type=str, default='/home/hungphd/media/dataPapersExternal/mixCodeRaw/step6_hgt_problem/AAAAA/BBBBB/mixcode_spoc.pk',
+parser.add_argument('--output_dir', type=str, default='/home/hungphd/media/dataPapersExternal/mixCodeRaw/step6_hgt_problem_origin/AAAAA/BBBBB/mixcode_spoc.pk',
                     help='The address to output the preprocessed graph.')
 
 args = parser.parse_args()
@@ -439,7 +439,7 @@ for problemId in lstProblemIds:
 
         start_time = time.time()
         best_test_acc=test_acc=0
-        for epoch in range(1, 500):
+        for epoch in range(1, 5001):
             loss = train()
             train_acc, val_acc, test_acc = test()
             if best_test_acc<test_acc:

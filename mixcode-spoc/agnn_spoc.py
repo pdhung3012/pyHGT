@@ -405,7 +405,7 @@ for problemId in lstProblemIds:
         optimizer = torch.optim.Adam(model.parameters(), lr=0.01, weight_decay=5e-4)
         best_test_acc = test_acc = 0
         start_time=time.time()
-        for epoch in range(1, 500):
+        for epoch in range(1, 5001):
             train()
             train_acc, val_acc, test_acc = test()
             if test_acc > best_test_acc:

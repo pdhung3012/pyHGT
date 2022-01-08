@@ -410,7 +410,7 @@ for problemId in lstProblemIds:
 
         start_time = time.time()
         best_test_acc = test_acc = 0
-        for epoch in range(1, 501):
+        for epoch in range(1, 5001):
             train()
             train_acc, val_acc, test_acc = test()
             if test_acc > best_test_acc:
