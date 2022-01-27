@@ -361,7 +361,7 @@ def loadHGTGraph(fopInputMixGraph ,fopInputEmbeddingModel,fopStep3V2,fopOutputGr
             lstValidMask.append(False)
             lstTestMask.append(True)
 
-    data = ToUndirected()(data)
+    # data = ToUndirected()(data)
     train_mask = torch.tensor(lstTrainMask)
     val_mask = torch.tensor(lstValidMask)
     test_mask = torch.tensor(lstTestMask)
