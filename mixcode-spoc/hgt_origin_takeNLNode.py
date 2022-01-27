@@ -101,9 +101,9 @@ parser = argparse.ArgumentParser(description='Preprocess ogbn-mag graph')
 '''
     Dataset arguments
 '''
-parser.add_argument('--input_mixgraph_dir', type=str, default='/home/hungphd/media/dataPapersExternal/mixCodeRaw/step5_origin/BBBBB/',
+parser.add_argument('--input_mixgraph_dir', type=str, default='/home/hungphd/media/dataPapersExternal/mixCodeRaw/step5_takeLeafNLNodes_augmentation/BBBBB/',
                     help='The address of input spoc dataset.')
-parser.add_argument('--input_embedding_dir', type=str, default='/home/hungphd/media/dataPapersExternal/mixCodeRaw/embeddingModels_beforeJan2022/d2v/',
+parser.add_argument('--input_embedding_dir', type=str, default='/home/hungphd/media/dataPapersExternal/mixCodeRaw/embeddingModels/d2v/',
                     help='The address of pretrained embedding model.')
 parser.add_argument('--output_dir', type=str, default='/home/hungphd/media/dataPapersExternal/mixCodeRaw/step6_hgt_problem_origin/AAAAA/BBBBB/mixcode_spoc.pk',
                     help='The address to output the preprocessed graph.')
@@ -113,7 +113,7 @@ args = parser.parse_args()
 fopRoot='/home/hungphd/media/dataPapersExternal/mixCodeRaw/'
 
 
-fopLog=fopRoot+'step7_logs/hgt_origin_reverse/'
+fopLog=fopRoot+'step7_logs/hgt_leafNLNodes_augmentation/'
 fpResult=fopLog+'a_hgt_result.txt'
 createDirIfNotExist(fopLog)
 
@@ -122,8 +122,8 @@ createDirIfNotExist(fopLog)
 # createDirIfNotExist(fopOutputGraph)
 
 lstProblemIds=[2,1,0]
-# lstContexts=['1','3','5','all']
-lstContexts=['5']
+lstContexts=['1','3','5','all']
+# lstContexts=['5']
 
 
 f1=open(fpResult,'w')
@@ -142,7 +142,7 @@ for problemId in lstProblemIds:
         fopOutputGraph=os.path.dirname(fpOutputGraph)
         createDirIfNotExist(fopOutputGraph)
         fpLogItem = fopLog + 'log_{}_{}.txt'.format(problemId, strContext)
-        # sys.stdout = open(fpLogItem, 'w')
+        sys.stdout = open(fpLogItem, 'w')
 
         fpDictLiterals=fopRoot+'step2_dictLiterals_all.txt'
         fpNodeProgramRoot=fopInputMixGraph+'nodes_ProgramRoot.txt'
@@ -445,8 +445,7 @@ for problemId in lstProblemIds:
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         # print('devide {}'.format(device))
         data, model = data.to(device), model.to(device)
-        print(data)
-        input('aaa ')
+
         with torch.no_grad():  # Initialize lazy modules.
             out = model(data.x_dict, data.edge_index_dict)
 
