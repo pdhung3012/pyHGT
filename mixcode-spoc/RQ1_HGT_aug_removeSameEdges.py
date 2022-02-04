@@ -269,7 +269,7 @@ def loadHGTGraph(fopInputMixGraph ,fopInputEmbeddingModel,fopStep3V2,fopOutputGr
         tupEdgeLabel = (strSourceType, 'to', strTargetType)
         arrayLoop = [[], []]
         arrayLoopReverse = [[], []]
-
+        dict_edge_appears={}
         for line in arrEdges:
             arrTabsItem = line.split(strSplitCharacterForNodeEdge)
             if len(arrTabsItem) >= 3:
@@ -317,10 +317,13 @@ def loadHGTGraph(fopInputMixGraph ,fopInputEmbeddingModel,fopStep3V2,fopOutputGr
                     # year = 2020
                     # elist[t_id][s_id] = year
                     # rlist[s_id][t_id] = year
-                    arrayLoop[0].append(s_id)
-                    arrayLoop[1].append(t_id)
-                    arrayLoopReverse[0].append(t_id)
-                    arrayLoopReverse[1].append(s_id)
+                    keyId=str(s_id)+'__'+str(t_id)
+                    if keyId not in dict_edge_appears.keys():
+                        dict_edge_appears[keyId]=1
+                        arrayLoop[0].append(s_id)
+                        arrayLoop[1].append(t_id)
+                    # arrayLoopReverse[0].append(t_id)
+                    # arrayLoopReverse[1].append(s_id)
                 except:
                     traceback.print_exc()
                     quit()
@@ -458,10 +461,10 @@ strSplitCharacterForNodeEdge='_ABAZ_'
 
 fopRoot='/home/hungphd/media/dataPapersExternal/mixCodeRaw/'
 
-fopStep5HGT=fopRoot+'step5_v2_HGT_v1/'
-fopStep3V2=fopRoot+'step3_v2/'
+fopStep5HGT=fopRoot+'step5_v2_HGT_optimize/'
+fopStep3V2=fopRoot+'step3_v3/'
 fopEmbedModel=fopRoot+'embeddingModels/'
-fopResult=fopRoot+'step7_rq1_sensitivity/hgt_origin/'
+fopResult=fopRoot+'step7_rq1_sensitivity/hgt_aug/'
 
 createDirIfNotExist(fopResult)
 
@@ -471,8 +474,8 @@ createDirIfNotExist(fopResult)
 
 lstProblemIds=['label.p1.overlap.txt']
 # lstContexts=['1','3','5','all']
-lstContexts=[1000,5,3,1]
-lstEmbeddingModel=['fasttext-cbow','d2v','tfidf']
+lstContexts=[1000]
+lstEmbeddingModel=['fasttext-cbow']
 lstPOS=['stanford']
 
 fpDictLiterals=fopRoot+'step2_dictLiterals_all.txt'
@@ -498,7 +501,7 @@ for problem in lstProblemIds:
                 fopItemOutputGraph=fopItemProblem+nameConfig+'/'
                 createDirIfNotExist(fopItemOutputGraph)
                 fpLogItem = fopItemOutputGraph + 'log.txt'
-                sys.stdout = open(fpLogItem, 'w')
+                # sys.stdout = open(fpLogItem, 'w')
                 data,dictCountValueInLabel=loadHGTGraph(fopInputMixGraph ,fopInputEmbeddingModel,fopStep3V2,fopItemOutputGraph,fpDictLiterals,problem)
 
                 model = HGT(hidden_channels=64, out_channels= len(dictCountValueInLabel.keys()), num_heads=2, num_layers=1)
@@ -509,9 +512,8 @@ for problem in lstProblemIds:
                 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
                 # print('devide {}'.format(device))
                 data, model = data.to(device), model.to(device)
-
                 print(data)
-                input('aaaa')
+                input('aaa')
                 with torch.no_grad():  # Initialize lazy modules.
                     out = model(data.x_dict, data.edge_index_dict)
 
@@ -521,7 +523,7 @@ for problem in lstProblemIds:
                 best_test_acc=test_acc=0
                 bestTestData=None
                 bestTestPredict=None
-                for epoch in range(1, 501):
+                for epoch in range(1, 5001):
                     loss = train()
                     train_acc, val_acc, test_acc,resultData,resultPredict = test()
                     if best_test_acc<test_acc:

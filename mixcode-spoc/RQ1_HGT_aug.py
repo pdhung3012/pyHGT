@@ -458,10 +458,10 @@ strSplitCharacterForNodeEdge='_ABAZ_'
 
 fopRoot='/home/hungphd/media/dataPapersExternal/mixCodeRaw/'
 
-fopStep5HGT=fopRoot+'step5_v2_HGT_v1/'
-fopStep3V2=fopRoot+'step3_v2/'
+fopStep5HGT=fopRoot+'step5_v2_HGT_optimize_v2/'
+fopStep3V2=fopRoot+'step3_v3/'
 fopEmbedModel=fopRoot+'embeddingModels/'
-fopResult=fopRoot+'step7_rq1_sensitivity/hgt_origin/'
+fopResult=fopRoot+'step7_rq1_sensitivity/hgt_aug/'
 
 createDirIfNotExist(fopResult)
 
@@ -471,8 +471,8 @@ createDirIfNotExist(fopResult)
 
 lstProblemIds=['label.p1.overlap.txt']
 # lstContexts=['1','3','5','all']
-lstContexts=[1000,5,3,1]
-lstEmbeddingModel=['fasttext-cbow','d2v','tfidf']
+lstContexts=[1000]
+lstEmbeddingModel=['fasttext-cbow']
 lstPOS=['stanford']
 
 fpDictLiterals=fopRoot+'step2_dictLiterals_all.txt'
@@ -509,9 +509,7 @@ for problem in lstProblemIds:
                 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
                 # print('devide {}'.format(device))
                 data, model = data.to(device), model.to(device)
-
                 print(data)
-                input('aaaa')
                 with torch.no_grad():  # Initialize lazy modules.
                     out = model(data.x_dict, data.edge_index_dict)
 
@@ -521,7 +519,7 @@ for problem in lstProblemIds:
                 best_test_acc=test_acc=0
                 bestTestData=None
                 bestTestPredict=None
-                for epoch in range(1, 501):
+                for epoch in range(1, 5001):
                     loss = train()
                     train_acc, val_acc, test_acc,resultData,resultPredict = test()
                     if best_test_acc<test_acc:

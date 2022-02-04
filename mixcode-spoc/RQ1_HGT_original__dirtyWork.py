@@ -36,6 +36,11 @@ from sklearn.metrics import precision_score, \
 # # We initialize conference node features with a single feature.
 # data['conference'].x = torch.ones(data['conference'].num_nodes, 1)
 
+def getRealValue(strInput,dictLitToVal):
+    if strInput in dictLitToVal.keys():
+        return dictLitToVal[strInput]
+    return strInput
+
 def loadHGTGraph(fopInputMixGraph ,fopInputEmbeddingModel,fopStep3V2,fopOutputGraph,fpDictLiterals,fnLabelFile):
     # fopInputMixGraph = args.input_mixgraph_dir.replace('BBBBB', strContext)
     # fopInputEmbeddingModel = args.input_embedding_dir
@@ -126,6 +131,13 @@ def loadHGTGraph(fopInputMixGraph ,fopInputEmbeddingModel,fopStep3V2,fopOutputGr
     # f1 = open(fpNodeNLRoot, 'r')
     # arrNLRs = f1.read().strip().split('\n')
     # f1.close()
+    # lstStrLabels=[]
+    # for key in dictLabelsTextToInt.keys():
+    #     lstStrLabels.append('{}\t{}'.format(key,dictLabelsTextToInt[key]))
+    # f1=open(fopResult+'label_hgt_origin.txt','w')
+    # f1.write('\n'.join(lstStrLabels))
+    # f1.close()
+    # sys.exit()
     dictNLRoots = {}
     lstYears = []
     lstIdxLabels = []
@@ -254,6 +266,7 @@ def loadHGTGraph(fopInputMixGraph ,fopInputEmbeddingModel,fopStep3V2,fopOutputGr
     data['NLNode'].x = torch.tensor(npArrayNLNodes)
 
     dict_edge_index = {}
+    dictCountEdgeAppears = {}
 
     for i in range(0, len(lstFpEdgesList)):
         fpEdge = lstFpEdgesList[i]
@@ -269,6 +282,8 @@ def loadHGTGraph(fopInputMixGraph ,fopInputEmbeddingModel,fopStep3V2,fopOutputGr
         tupEdgeLabel = (strSourceType, 'to', strTargetType)
         arrayLoop = [[], []]
         arrayLoopReverse = [[], []]
+
+
 
         for line in arrEdges:
             arrTabsItem = line.split(strSplitCharacterForNodeEdge)
@@ -304,6 +319,17 @@ def loadHGTGraph(fopInputMixGraph ,fopInputEmbeddingModel,fopStep3V2,fopOutputGr
                     if strTextSource not in dictAllNodes[s_type].keys() or strTextTarget not in dictAllNodes[t_type].keys():
                         continue
 
+                    strKeyType=s_type+'_AAA_'+t_type
+                    if strKeyType not in dictCountEdgeAppears.keys():
+                        dictCountEdgeAppears[strKeyType]={}
+                    strKeyValue=getRealValue(strTextSource,dictLiteralsToValues)+'_AAA_'+getRealValue(strTextTarget,dictLiteralsToValues)
+                    if strKeyValue not in dictCountEdgeAppears[strKeyType].keys():
+                        dictCountEdgeAppears[strKeyType][strKeyValue]=1
+                    else:
+                        dictCountEdgeAppears[strKeyType][strKeyValue]=dictCountEdgeAppears[strKeyType][strKeyValue]+1
+
+
+
                     if strTextSource != 'translation_unit':
                         s_id = dictAllNodes[s_type][strTextSource][0]
                     else:
@@ -329,7 +355,19 @@ def loadHGTGraph(fopInputMixGraph ,fopInputEmbeddingModel,fopStep3V2,fopOutputGr
         # dict_edge_index[tupEdgeLabel]=torch.tensor(arrayLoop)
 
         # print('end edge {}'.format(fpEdge))
-
+    print('prepare here')
+    import operator
+    for keyType in dictCountEdgeAppears.keys():
+        lstValToString=[]
+        dictItem=dictCountEdgeAppears[keyType]
+        sorted_x = sorted(dictItem.items(), key=operator.itemgetter(1),reverse=True)
+        for k,v in sorted_x:
+            strWrite='{}\t{}'.format(k.replace('_AAA_','\t'),v)
+            lstValToString.append(strWrite)
+        f1=open(fopResult+'edgesAppear_'+keyType,'w')
+        f1.write('\n'.join(lstValToString))
+        f1.close()
+    sys.exit()
     # lstTrainMask=range(0,len(dictNLRoots.keys()))
     # lstValidMask=range(0,len(dictNLRoots.keys()))
     # lstTestMask=range(0,len(dictNLRoots.keys()))
@@ -509,9 +547,7 @@ for problem in lstProblemIds:
                 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
                 # print('devide {}'.format(device))
                 data, model = data.to(device), model.to(device)
-
-                print(data)
-                input('aaaa')
+                # print(data)
                 with torch.no_grad():  # Initialize lazy modules.
                     out = model(data.x_dict, data.edge_index_dict)
 
