@@ -248,8 +248,8 @@ def loadHGTGraph(fopInputMixGraph ,fopInputEmbeddingModel,fopStep3V2,fopOutputGr
     npArrayNLNodes = np.array(lstVectorNLNode).astype(np.float32)
 
     data = HeteroData()
-    data['ProgramRoot'].x = torch.tensor(npArrayPRs)
     data['NLRoot'].x = torch.tensor(npArrayNLRs)
+    data['ProgramRoot'].x = torch.tensor(npArrayPRs)
     data['ASTNode'].x = torch.tensor(npArrayASTNodes)
     data['NLNode'].x = torch.tensor(npArrayNLNodes)
 
@@ -325,7 +325,7 @@ def loadHGTGraph(fopInputMixGraph ,fopInputEmbeddingModel,fopStep3V2,fopOutputGr
                     traceback.print_exc()
                     quit()
         data[tupEdgeLabel[0], tupEdgeLabel[1], tupEdgeLabel[2]].edge_index = torch.tensor(arrayLoop)
-        # data[tupEdgeLabel[2], tupEdgeLabel[1], tupEdgeLabel[0]].edge_index = torch.tensor(arrayLoopReverse)
+        data[tupEdgeLabel[2], tupEdgeLabel[1], tupEdgeLabel[0]].edge_index = torch.tensor(arrayLoopReverse)
         # dict_edge_index[tupEdgeLabel]=torch.tensor(arrayLoop)
 
         # print('end edge {}'.format(fpEdge))
@@ -375,6 +375,37 @@ def loadHGTGraph(fopInputMixGraph ,fopInputEmbeddingModel,fopStep3V2,fopOutputGr
     return data,dictCountValueInLabel
 
 
+# class HGT(torch.nn.Module):
+#     def __init__(self, hidden_channels, out_channels, num_heads, num_layers):
+#         super().__init__()
+#
+#         self.lin_dict = torch.nn.ModuleDict()
+#         for node_type in data.node_types:
+#             self.lin_dict[node_type] = Linear(-1, hidden_channels)
+#
+#         self.convs = torch.nn.ModuleList()
+#         for _ in range(num_layers):
+#             conv = HGTConv(hidden_channels, hidden_channels, data.metadata(),
+#                            num_heads, group='sum')
+#             print('type conv in training {}'.format(type(conv)))
+#             self.convs.append(conv)
+#
+#         self.lin = Linear(hidden_channels, out_channels)
+#
+#     def forward(self, x_dict, edge_index_dict):
+#         for node_type, x in x_dict.items():
+#             x_dict[node_type] = self.lin_dict[node_type](x).relu_()
+#         indexConv=0
+#         for conv in self.convs:
+#             indexConv=indexConv+1
+#             # if( indexConv==1):
+#             x_dict = conv(x_dict, edge_index_dict)
+#             # else:
+#             #     conv(x_dict, edge_index_dict)
+#             # print('indexConv {}'.format(indexConv))
+#
+#         return self.lin(x_dict['NLRoot'])
+
 class HGT(torch.nn.Module):
     def __init__(self, hidden_channels, out_channels, num_heads, num_layers):
         super().__init__()
@@ -400,20 +431,85 @@ class HGT(torch.nn.Module):
 
         return self.lin(x_dict['NLRoot'])
 
+# from torch_geometric.nn import SAGEConv, HeteroConv, Linear
+# class HeteroGNN(torch.nn.Module):
+#     def __init__(self, metadata, hidden_channels, out_channels, num_layers):
+#         super().__init__()
+#
+#         self.convs = torch.nn.ModuleList()
+#         print(metadata[0])
+#         for _ in range(num_layers):
+#             conv = HeteroConv({
+#                 edge_type: SAGEConv((-1, -1), hidden_channels)
+#                 for edge_type in metadata[1]
+#             })
+#             self.convs.append(conv)
+#
+#         self.lin = Linear(hidden_channels, out_channels)
+#
+#     def forward(self, x_dict, edge_index_dict):
+#         for conv in self.convs:
+#             x_dict = conv(x_dict, edge_index_dict)
+#             x_dict = {key: F.leaky_relu(x) for key, x in x_dict.items()}
+#         return self.lin(x_dict['NLRoot'])
+
+
+# def train():
+#     model.train()
+#     optimizer.zero_grad()
+#     out = model(data.x_dict, data.edge_index_dict)
+#     mask = data['NLRoot'].train_mask
+#     loss = F.cross_entropy(out[mask], data['NLRoot'].y[mask])
+#     loss.backward()
+#     optimizer.step()
+#     return float(loss)
+
+
+# def train():
+#     model.train()
+#     optimizer.zero_grad()
+#     out = model(data.x_dict, data.edge_index_dict)
+#     # print(data.x_dict)
+#     # print(type(data.x_dict))
+#     # input('aaa ')
+#     # print(data.edge_index_dict)
+#     # print(type(data.edge_index_dict))
+#     # input('bbb ')
+#     mask = data['NLRoot'].train_mask
+#     loss = F.cross_entropy(out[mask], data['NLRoot'].y[mask])
+#     # print('loss {}'.format(loss))
+#     loss.backward()
+#     optimizer.step()
+#     return float(loss)
+
+
+# @torch.no_grad()
+# def test():
+#     model.eval()
+#     pred = model(data.x_dict, data.edge_index_dict).argmax(dim=-1)
+#
+#     accs = []
+#     resultData=None
+#     resultPred=None
+#     for split in ['train_mask', 'val_mask', 'test_mask']:
+#         mask = data['NLRoot'][split]
+#         # print('mask {} {}'.format(split,len(pred[mask])))
+#         # print('element {}'.format(pred[mask][0]))
+#         acc = (pred[mask] == data['NLRoot'].y[mask]).sum() / mask.sum()
+#         accs.append(float(acc))
+#         if split == 'test_mask':
+#             resultData = data['NLRoot'].y[mask]
+#             resultPred = pred[mask]
+#             accs.append(resultData)
+#             accs.append(resultPred)
+#     return accs
 
 def train():
     model.train()
     optimizer.zero_grad()
     out = model(data.x_dict, data.edge_index_dict)
-    # print(data.x_dict)
-    # print(type(data.x_dict))
-    # input('aaa ')
-    # print(data.edge_index_dict)
-    # print(type(data.edge_index_dict))
-    # input('bbb ')
     mask = data['NLRoot'].train_mask
     loss = F.cross_entropy(out[mask], data['NLRoot'].y[mask])
-    # print('loss {}'.format(loss))
     loss.backward()
     optimizer.step()
     return float(loss)
@@ -439,7 +535,6 @@ def test():
             accs.append(resultData)
             accs.append(resultPred)
     return accs
-
 
 strSplitCharacterForNodeEdge='_ABAZ_'
 # parser = argparse.ArgumentParser(description='Preprocess ogbn-mag graph')
@@ -471,8 +566,8 @@ createDirIfNotExist(fopResult)
 
 lstProblemIds=['label.p1.overlap.txt']
 # lstContexts=['1','3','5','all']
-lstContexts=[1000,5,3,1]
-lstEmbeddingModel=['fasttext-cbow','d2v','tfidf']
+lstContexts=[3]
+lstEmbeddingModel=['fasttext-cbow']
 lstPOS=['stanford']
 
 fpDictLiterals=fopRoot+'step2_dictLiterals_all.txt'
@@ -498,10 +593,14 @@ for problem in lstProblemIds:
                 fopItemOutputGraph=fopItemProblem+nameConfig+'/'
                 createDirIfNotExist(fopItemOutputGraph)
                 fpLogItem = fopItemOutputGraph + 'log.txt'
-                sys.stdout = open(fpLogItem, 'w')
+                # sys.stdout = open(fpLogItem, 'w')
                 data,dictCountValueInLabel=loadHGTGraph(fopInputMixGraph ,fopInputEmbeddingModel,fopStep3V2,fopItemOutputGraph,fpDictLiterals,problem)
 
-                model = HGT(hidden_channels=64, out_channels= len(dictCountValueInLabel.keys()), num_heads=2, num_layers=1)
+
+                model = HGT(hidden_channels=64, out_channels= len(dictCountValueInLabel.keys()), num_heads=2, num_layers=2)
+                # model = HeteroGNN(data.metadata(), hidden_channels=64, out_channels=len(dictCountValueInLabel.keys()),
+                #                   num_layers=4)
+
                 # for name, param in model.named_parameters():
                 #     if param.requires_grad:
                 #         print('{} value {}'.format(name, param.data))
@@ -512,8 +611,8 @@ for problem in lstProblemIds:
 
                 print(data)
                 # input('aaaa')
-                with torch.no_grad():  # Initialize lazy modules.
-                    out = model(data.x_dict, data.edge_index_dict)
+                # with torch.no_grad():  # Initialize lazy modules.
+                #     out = model(data.x_dict, data.edge_index_dict)
 
                 optimizer = torch.optim.Adam(model.parameters(), lr=0.005, weight_decay=0.001)
 
@@ -521,7 +620,7 @@ for problem in lstProblemIds:
                 best_test_acc=test_acc=0
                 bestTestData=None
                 bestTestPredict=None
-                for epoch in range(1, 501):
+                for epoch in range(1, 101):
                     loss = train()
                     train_acc, val_acc, test_acc,resultData,resultPredict = test()
                     if best_test_acc<test_acc:
@@ -564,8 +663,8 @@ for problem in lstProblemIds:
                     '{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}'.format(embed,context,pos,precision,recall,fscore,acc,train_time,test_time) + '\n')
                 f1.close()
 
-                sys.stdout.close()
-                sys.stdout=sys.__stdout__
+                # sys.stdout.close()
+                # sys.stdout=sys.__stdout__
 
                 dictTotalResults[strKey] = [best_test_acc, val_acc, train_acc, train_time, test_time]
 

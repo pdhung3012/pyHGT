@@ -446,7 +446,7 @@ for problemId in lstProblemIds:
         # print('devide {}'.format(device))
         data, model = data.to(device), model.to(device)
         print(data)
-        input('aaa ')
+        # input('aaa ')
         with torch.no_grad():  # Initialize lazy modules.
             out = model(data.x_dict, data.edge_index_dict)
 

@@ -374,7 +374,7 @@ def loadHGTGraph(fopInputMixGraph ,fopInputEmbeddingModel,fopStep3V2,fopOutputGr
     # input('aaa ')
     return data,dictCountValueInLabel
 
-
+from torch.nn import ReLU
 class HGT(torch.nn.Module):
     def __init__(self, hidden_channels, out_channels, num_heads, num_layers):
         super().__init__()
@@ -384,12 +384,15 @@ class HGT(torch.nn.Module):
             self.lin_dict[node_type] = Linear(-1, hidden_channels)
 
         self.convs = torch.nn.ModuleList()
+        print('num_layers {} {}'.format(num_layers,hidden_channels))
         for _ in range(num_layers):
             conv = HGTConv(hidden_channels, hidden_channels, data.metadata(),
                            num_heads, group='sum')
+            # reluItem=ReLU()
             self.convs.append(conv)
+            # self.convs.append(reluItem)
 
-        self.lin = Linear(hidden_channels, out_channels)
+        self.lin = Linear(hidden_channels, 1)
 
     def forward(self, x_dict, edge_index_dict):
         for node_type, x in x_dict.items():
@@ -412,26 +415,31 @@ def train():
     # print(type(data.edge_index_dict))
     # input('bbb ')
     mask = data['NLRoot'].train_mask
-    loss = F.cross_entropy(out[mask], data['NLRoot'].y[mask])
-    # print('loss {}'.format(loss))
+    loss =F.mse_loss(out[mask].float(), data['NLRoot'].y[mask].float())
+    # print('loss {} type {}'.format(loss,type(loss)))
+    # print(out[mask].float())
     loss.backward()
     optimizer.step()
     return float(loss)
 
+from sklearn.metrics import mean_squared_error
 
 @torch.no_grad()
 def test():
     model.eval()
-    pred = model(data.x_dict, data.edge_index_dict).argmax(dim=-1)
-
+    pred = torch.reshape(model(data.x_dict, data.edge_index_dict), (-1,))
+    # print('{} {}'.format(type(model(data.x_dict, data.edge_index_dict)),model(data.x_dict, data.edge_index_dict)))
+    # print('{} {}'.format(type(pred),pred))
     accs = []
     resultData=None
     resultPred=None
     for split in ['train_mask', 'val_mask', 'test_mask']:
         mask = data['NLRoot'][split]
+        # print(pred[mask])
         # print('mask {} {}'.format(split,len(pred[mask])))
         # print('element {}'.format(pred[mask][0]))
-        acc = (pred[mask] == data['NLRoot'].y[mask]).sum() / mask.sum()
+        # acc = (pred[mask] == data['NLRoot'].y[mask]).sum() / mask.sum()
+        acc=1.0/F.mse_loss(data['NLRoot'].y[mask],pred[mask])
         accs.append(float(acc))
         if split == 'test_mask':
             resultData = data['NLRoot'].y[mask]
@@ -471,8 +479,8 @@ createDirIfNotExist(fopResult)
 
 lstProblemIds=['label.p1.overlap.txt']
 # lstContexts=['1','3','5','all']
-lstContexts=[1000,5,3,1]
-lstEmbeddingModel=['fasttext-cbow','d2v','tfidf']
+lstContexts=[5]
+lstEmbeddingModel=['fasttext-cbow']
 lstPOS=['stanford']
 
 fpDictLiterals=fopRoot+'step2_dictLiterals_all.txt'
@@ -498,7 +506,7 @@ for problem in lstProblemIds:
                 fopItemOutputGraph=fopItemProblem+nameConfig+'/'
                 createDirIfNotExist(fopItemOutputGraph)
                 fpLogItem = fopItemOutputGraph + 'log.txt'
-                sys.stdout = open(fpLogItem, 'w')
+                # sys.stdout = open(fpLogItem, 'w')
                 data,dictCountValueInLabel=loadHGTGraph(fopInputMixGraph ,fopInputEmbeddingModel,fopStep3V2,fopItemOutputGraph,fpDictLiterals,problem)
 
                 model = HGT(hidden_channels=64, out_channels= len(dictCountValueInLabel.keys()), num_heads=2, num_layers=1)
@@ -521,7 +529,7 @@ for problem in lstProblemIds:
                 best_test_acc=test_acc=0
                 bestTestData=None
                 bestTestPredict=None
-                for epoch in range(1, 501):
+                for epoch in range(1, 5001):
                     loss = train()
                     train_acc, val_acc, test_acc,resultData,resultPredict = test()
                     if best_test_acc<test_acc:
@@ -542,6 +550,8 @@ for problem in lstProblemIds:
                 fpLogAccSumItem = fopItemOutputGraph + 'logAccSum.txt'
                 listTestExpected=bestTestData.tolist()
                 listTestPredicted = bestTestPredict.tolist()
+                print('predict {}'.format(listTestPredicted))
+                # input('aaa ')
                 lstToStr=[]
                 for q in range(0,len(listTestExpected)):
                     strItem='{}\t{}'.format(listTestExpected[q],listTestPredicted[q])
@@ -549,23 +559,23 @@ for problem in lstProblemIds:
                 f1=open(fpLogAccItem,'w')
                 f1.write('\n'.join(lstToStr))
                 f1.close()
-                strConfMatrixAndReport='{}\n{}'.format(str(classification_report(listTestExpected,listTestPredicted)),str(confusion_matrix(listTestExpected,listTestPredicted)))
-                f1=open(fpLogAccSumItem,'w')
-                f1.write(strConfMatrixAndReport)
-                f1.close()
+                # strConfMatrixAndReport='{}\n{}'.format(str(classification_report(listTestExpected,listTestPredicted)),str(confusion_matrix(listTestExpected,listTestPredicted)))
+                # f1=open(fpLogAccSumItem,'w')
+                # f1.write(strConfMatrixAndReport)
+                # f1.close()
 
-                acc = accuracy_score(listTestExpected, listTestPredicted)
-                precision = precision_score(listTestExpected, listTestPredicted, average='weighted')
-                recall = recall_score(listTestExpected, listTestPredicted, average='weighted')
-                fscore = f1_score(listTestExpected, listTestPredicted, average='weighted')
-
+                acc = mean_squared_error(listTestExpected, listTestPredicted)
+                # precision = precision_score(listTestExpected, listTestPredicted, average='weighted')
+                # recall = recall_score(listTestExpected, listTestPredicted, average='weighted')
+                # fscore = f1_score(listTestExpected, listTestPredicted, average='weighted')
+                #
                 f1 = open(fpResultToExcel, 'a')
                 f1.write(
-                    '{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}'.format(embed,context,pos,precision,recall,fscore,acc,train_time,test_time) + '\n')
+                    '{}\t{}\t{}\t{}\t{}\t{}'.format(embed,context,pos,acc,train_time,test_time) + '\n')
                 f1.close()
 
-                sys.stdout.close()
-                sys.stdout=sys.__stdout__
+                # sys.stdout.close()
+                # sys.stdout=sys.__stdout__
 
                 dictTotalResults[strKey] = [best_test_acc, val_acc, train_acc, train_time, test_time]
 

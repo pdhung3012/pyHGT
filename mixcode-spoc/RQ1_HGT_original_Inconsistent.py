@@ -83,10 +83,13 @@ def loadHGTGraph(fopInputMixGraph ,fopInputEmbeddingModel,fopStep3V2,fopOutputGr
         item=arrTVTs[i]
         arrItemTabs=item.split('\t')
         arrLblTabs=arrLabels[i].split('\t')
-        strKey=arrItemTabs[2]+'__'+arrItemTabs[1]+'__'+arrItemTabs[3]
+        strKeyCorrect='1__'+arrItemTabs[2]+'__'+arrItemTabs[1]+'__'+arrItemTabs[3]
+        strKeyIncorrect = '0__' + arrItemTabs[2] + '__' + arrItemTabs[1] + '__' + arrItemTabs[3]
         # print(strKey)
-        dictTrainTestIndexes[strKey]=arrItemTabs[0]
-        dictLabelsFromLocations[strKey]=arrLblTabs[0]
+        dictTrainTestIndexes[strKeyCorrect]=arrItemTabs[0]
+        dictLabelsFromLocations[strKeyCorrect]='1'
+        dictTrainTestIndexes[strKeyIncorrect]=arrItemTabs[0]
+        dictLabelsFromLocations[strKeyIncorrect]='0'
 
     dictProgramRoots = {}
     dictASTNodes = {}
@@ -109,7 +112,9 @@ def loadHGTGraph(fopInputMixGraph ,fopInputEmbeddingModel,fopStep3V2,fopOutputGr
         arrItemContent = item.split(strSplitCharacterForNodeEdge)
         if len(arrItemContent) >= 2:
             # print(arrItemContent[0])
-            if arrItemContent[0] in setErrorLocations:
+            arrSplitbyHy=arrItemContent[0].split('__')
+            strRealKeyFile=arrSplitbyHy[1]+'__'+arrSplitbyHy[2]+'__'+arrSplitbyHy[3]
+            if strRealKeyFile in setErrorLocations:
                 continue
             id = len(dictProgramRoots.keys())
             strProgramId = arrItemContent[0]
@@ -133,7 +138,9 @@ def loadHGTGraph(fopInputMixGraph ,fopInputEmbeddingModel,fopStep3V2,fopOutputGr
         item = arrPRs[i]
         arrItemContent = item.split(strSplitCharacterForNodeEdge)
         if len(arrItemContent) >= 2:
-            if arrItemContent[0] in setErrorLocations:
+            arrSplitbyHy = arrItemContent[0].split('__')
+            strRealKeyFile = arrSplitbyHy[1] + '__' + arrSplitbyHy[2] + '__' + arrSplitbyHy[3]
+            if strRealKeyFile in setErrorLocations:
                 continue
             id = len(dictNLRoots.keys())
             strProgramId = arrItemContent[0]
@@ -176,8 +183,8 @@ def loadHGTGraph(fopInputMixGraph ,fopInputEmbeddingModel,fopStep3V2,fopOutputGr
     # fopParagraphEmbed = fopInputEmbeddingModel + 'paragraph_emb/'
     # lstFpTokenEmbed = sorted(glob.glob(fopTokenEmbed + '*.txt'))
     # lstFpParagraphEmbed = sorted(glob.glob(fopParagraphEmbed + '*.txt'))
-    fpVectorNLRoot=fopInputEmbeddingModel+'NLRoot.vectorForEmb.txt'
-    fpVectorProgramRoot = fopInputEmbeddingModel + 'ProgramRoot.vectorForEmb.txt'
+    fpVectorNLRoot=fopInputEmbeddingModel+'embInconsistent.txt'
+    fpVectorProgramRoot = fopInputEmbeddingModel + 'embInconsistent.txt'
     fpVectorNode = fopInputEmbeddingModel + 'Node.vectorForEmb.txt'
     dictVectorProgramRoot = {}
     dictVectorNLRoot = {}
@@ -196,13 +203,15 @@ def loadHGTGraph(fopInputMixGraph ,fopInputEmbeddingModel,fopStep3V2,fopOutputGr
     for i in range(0, len(arrVectorPRs)):
         arrTabPR=arrVectorPRs[i].split('\t')
         arrTabNLR = arrVectorNLRs[i].split('\t')
-        strProgramId=arrTabPR[1]+'__'+arrTabPR[0]+'__'+arrTabPR[2]
+        strProgramDetailId=arrTabPR[4]+'__'+arrTabPR[2]+'__'+arrTabPR[1]+'__'+arrTabPR[3]
+        strProgramId=arrTabPR[2]+'__'+arrTabPR[1]+'__'+arrTabPR[3]
+        # print(strProgramDetailId)
         if (strProgramId not in setErrorLocations):
             # print('idididd {} {}'.format(i,strId))
-            dictVectorProgramRoot['ProgramRoot_' + strProgramId] = [float(item) for item in arrTabPR[3].split()]
-            dictVectorNLRoot['NLRoot_' + strProgramId] = [float(item) for item in arrTabNLR[3].split()]
+            dictVectorProgramRoot['ProgramRoot_' + strProgramDetailId] = [float(item) for item in arrTabPR[5].split()]
+            dictVectorNLRoot['NLRoot_' + strProgramDetailId] = [float(item) for item in arrTabNLR[5].split()]
             if lengthOfVector == 0:
-                lengthOfVector = len(dictVectorProgramRoot['ProgramRoot_' + strProgramId])
+                lengthOfVector = len(dictVectorProgramRoot['ProgramRoot_' + strProgramDetailId])
 
     lstVectorPRs = []
     for i in range(0, len(dictProgramRoots.keys())):
@@ -458,10 +467,10 @@ strSplitCharacterForNodeEdge='_ABAZ_'
 
 fopRoot='/home/hungphd/media/dataPapersExternal/mixCodeRaw/'
 
-fopStep5HGT=fopRoot+'step5_v2_HGT_v1/'
+fopStep5HGT=fopRoot+'step5_Inconsistent/'
 fopStep3V2=fopRoot+'step3_v2/'
 fopEmbedModel=fopRoot+'embeddingModels/'
-fopResult=fopRoot+'step7_rq1_sensitivity/hgt_origin/'
+fopResult=fopRoot+'step7_Inconsistent/hgt_origin/'
 
 createDirIfNotExist(fopResult)
 
@@ -471,8 +480,8 @@ createDirIfNotExist(fopResult)
 
 lstProblemIds=['label.p1.overlap.txt']
 # lstContexts=['1','3','5','all']
-lstContexts=[1000,5,3,1]
-lstEmbeddingModel=['fasttext-cbow','d2v','tfidf']
+lstContexts=[0]
+lstEmbeddingModel=['fasttext-cbow']
 lstPOS=['stanford']
 
 fpDictLiterals=fopRoot+'step2_dictLiterals_all.txt'
@@ -498,7 +507,7 @@ for problem in lstProblemIds:
                 fopItemOutputGraph=fopItemProblem+nameConfig+'/'
                 createDirIfNotExist(fopItemOutputGraph)
                 fpLogItem = fopItemOutputGraph + 'log.txt'
-                sys.stdout = open(fpLogItem, 'w')
+                # sys.stdout = open(fpLogItem, 'w')
                 data,dictCountValueInLabel=loadHGTGraph(fopInputMixGraph ,fopInputEmbeddingModel,fopStep3V2,fopItemOutputGraph,fpDictLiterals,problem)
 
                 model = HGT(hidden_channels=64, out_channels= len(dictCountValueInLabel.keys()), num_heads=2, num_layers=1)
